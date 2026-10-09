@@ -29,6 +29,7 @@ import { FileInfoComponent } from "../../components/lightbox/FileInfoComponent";
 import { LocationSection } from "../../components/lightbox/LocationSection";
 import { PeopleSection } from "../../components/lightbox/PeopleSection";
 import { SimilarPhotosSection } from "../../components/lightbox/SimilarPhotosSection";
+import { TagsSection } from "../../components/lightbox/TagsSection";
 import { TimestampItem } from "../../components/lightbox/TimestampItem";
 import { parsePhotoTimestamp } from "../../util/dateUtils";
 
@@ -138,6 +139,7 @@ function SinglePhotoView() {
                   // To-Do: Implement this
                   notThisPerson={() => {}}
                 />
+                <TagsSection photoDetail={photoDetail} />
                 <Description photoDetail={photoDetail} isPublic={false} />
               </Stack>
             </Grid.Col>
