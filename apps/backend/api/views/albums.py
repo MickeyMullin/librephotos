@@ -494,6 +494,11 @@ DATE_ALBUM_FILTER_PARAMETERS = [
     OpenApiParameter("hide_screenshots", OpenApiTypes.BOOL),
     OpenApiParameter("hide_documents", OpenApiTypes.BOOL),
     OpenApiParameter(
+        "untagged",
+        OpenApiTypes.BOOL,
+        description="Only photos with no tags; ignored on a public view.",
+    ),
+    OpenApiParameter(
         "apply_default",
         OpenApiTypes.BOOL,
         description="Apply the user's default_timeline_filter; the "
@@ -526,7 +531,7 @@ class AlbumDateViewSet(viewsets.ModelViewSet):
         params = self.request.query_params
 
         filters = [Q(hidden=bool(params.get("hidden")))]
-        # Media type, screenshots, documents and favorites: resolved exactly as
+        # Media type, screenshots, documents, favorites and untagged: resolved exactly as
         # AlbumDateListViewSet does, so a day's pages match its count there.
         filters += timeline_filter_q(self.request.user, params)
         if params.get("in_trashcan"):
@@ -691,7 +696,7 @@ class AlbumDateListViewSet(ListViewSet):
                 filter.append(Q(owner__username=username))
             filter.append(Q(photos__public=True))
 
-        # Media type, screenshots, documents and favorites (see
+        # Media type, screenshots, documents, favorites and untagged (see
         # api.timeline_filter). Positive conditions on the photos join, applied
         # in the one filter() call below, so a day holding a screenshot keeps
         # its other photos and photo_count counts only the matching ones.

@@ -28,7 +28,8 @@ def build_photo_queryset(user, params: dict):
             - hidden: bool - Filter by hidden photos
             - in_trashcan: bool - Filter by trashed photos
             - media, video, photo, is_screenshot, is_document,
-              hide_screenshots, hide_documents, favorite, apply_default -
+              hide_screenshots, hide_documents, favorite, untagged,
+              apply_default -
               the timeline filter, resolved by api.timeline_filter exactly as
               the date-album endpoints resolve it, so select-all on the
               timeline acts on what it shows
@@ -42,7 +43,7 @@ def build_photo_queryset(user, params: dict):
     """
     filters = [Q(thumbnail__aspect_ratio__isnull=False)]
 
-    # Media type, screenshots, documents and favorites
+    # Media type, screenshots, documents, favorites and untagged
     filters += timeline_filter_q(user, params)
 
     if params.get("public"):

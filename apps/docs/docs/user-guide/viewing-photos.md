@@ -22,13 +22,13 @@ The **Filter** button next to the display options narrows what the timeline show
 
 - **Media type**: all, photos only, or videos only.
 - **Hide from timeline**: leave out **Screenshots** and/or **Documents** (see [Fixing a wrong category](#category)).
-- **Show only**: **Favorites**.
+- **Show only**: **Favorites** and/or **Untagged**. **Untagged** keeps only the photos that carry none of your [tags](albums.md#tagging-photos), so you can work through what is left to tag: select photos, tag them, and they drop out of the view. Tags imported from a file's keywords count as tags. The tags the AI tagging model suggests (the **Generate Tags** job) do not, since they are not tags you can edit. The **Untagged** option is not in a release yet; it ships with the first release after 1.2.1.
 
 While a filter is active the button is highlighted with the number of active filters, and the header says what is filtered. The filter lives in the page address, so it survives a reload and can be bookmarked.
 
 **Save as default** makes the current filter what the timeline shows every time you open it, for example to keep screenshots out for good. **Reset to default** goes back to your saved default. A saved default applies to the main timeline only: Favorites, Screenshots, Videos, Hidden, Trash, albums, folders, search, people, places and public pages are never filtered by it.
 
-Selecting all photos on a filtered timeline selects only what it shows, so **Select all** followed by **Move to trash** never reaches the screenshots or documents the filter hides.
+Selecting all photos on a filtered timeline selects only what it shows, so **Select all** followed by **Move to trash** never reaches the screenshots or documents the filter hides, and **Select all** followed by tagging on an untagged-only timeline tags exactly the untagged photos.
 
 ### Favorites
 

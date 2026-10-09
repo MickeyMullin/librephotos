@@ -6,11 +6,12 @@ server-side select-all (``build_photo_queryset``) agree on exactly which photos
 are in view. If they did not, a day's placeholder count would not match its
 pages, and "select all, then delete" could reach photos the timeline hid.
 
-The filter has four keys, the same as ``User.default_timeline_filter``:
+The filter has five keys, the same as ``User.default_timeline_filter``:
 
 * ``media``: ``all``, ``photos`` (no videos) or ``videos``,
 * ``hide_screenshots`` / ``hide_documents``: leave that media category out,
-* ``favorites``: only photos rated at least ``User.favorite_min_rating``.
+* ``favorites``: only photos rated at least ``User.favorite_min_rating``,
+* ``untagged``: only photos carrying no ``Tag``, to find what is left to tag.
 
 The user's saved default applies only when the request asks for it with
 ``apply_default``, so older clients and every other view keep their behaviour,
@@ -23,7 +24,10 @@ Explicit params then override the default key by key:
 * ``favorite``: ``true`` shows only favorites, ``false`` turns a saved
   favorites-only default off,
 * ``is_screenshot`` / ``is_document``: ``true`` shows only that category (the
-  Screenshots page), ``false`` hides it.
+  Screenshots page), ``false`` hides it,
+* ``untagged``: ``true`` shows only untagged photos, ``false`` turns a saved
+  untagged-only default off. Ignored on a public view: tags are private to
+  their owner, so a visitor must not learn which public photos carry one.
 
 Every flag is tri-state: a true word, a false word, or absent. These params
 used to be read by truthiness, so ``?is_screenshot=false`` returned *only*
@@ -43,6 +47,7 @@ DEFAULT_FILTER_KEYS = {
     "hide_screenshots": bool,
     "hide_documents": bool,
     "favorites": bool,
+    "untagged": bool,
 }
 
 _FALSE_WORDS = {"false", "0", "no", "off"}
@@ -76,6 +81,7 @@ class TimelineFilter:
     screenshots: str = "any"
     documents: str = "any"
     favorites: bool = False
+    untagged: bool = False
 
     def q(self, user, prefix=""):
         """Positive ``Q`` objects for this filter on ``<prefix>`` photo fields.
@@ -104,6 +110,11 @@ class TimelineFilter:
                 user, "favorite_min_rating", settings.DEFAULT_FAVORITE_MIN_RATING
             )
             filters.append(Q(**{f"{prefix}rating__gte": min_rating}))
+        if self.untagged:
+            # Positive on purpose, like the rest: ``isnull`` on the m2m is a
+            # LEFT JOIN, so with ``photos__`` it keeps a day's untagged photos
+            # and drops only the tagged ones.
+            filters.append(Q(**{f"{prefix}tags__isnull": True}))
         return filters
 
 
@@ -122,6 +133,7 @@ def saved_default(user):
         screenshots="hide" if saved.get("hide_screenshots") is True else "any",
         documents="hide" if saved.get("hide_documents") is True else "any",
         favorites=saved.get("favorites") is True,
+        untagged=saved.get("untagged") is True,
     )
 
 
@@ -168,11 +180,13 @@ def resolve_timeline_filter(user, params):
     screenshots = _category_override(params, "is_screenshot", "hide_screenshots")
     documents = _category_override(params, "is_document", "hide_documents")
     favorites = parse_tristate(params.get("favorite"))
+    untagged = None if public_view else parse_tristate(params.get("untagged"))
     return TimelineFilter(
         media=base.media if media is None else media,
         screenshots=base.screenshots if screenshots is None else screenshots,
         documents=base.documents if documents is None else documents,
         favorites=base.favorites if favorites is None else favorites,
+        untagged=base.untagged if untagged is None else untagged,
     )
 
 

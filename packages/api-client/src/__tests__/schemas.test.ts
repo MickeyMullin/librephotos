@@ -50,9 +50,15 @@ describe("schema parsing against fixtures", () => {
   it("keeps the valid keys of a saved timeline filter and drops the rest", () => {
     const parsed = User.parse({
       ...userFixture,
-      default_timeline_filter: { media: "photos", hide_screenshots: "yes", favorites: true },
+      default_timeline_filter: {
+        media: "photos",
+        hide_screenshots: "yes",
+        favorites: true,
+        untagged: true,
+        hide_documents: 1,
+      },
     });
-    expect(parsed.default_timeline_filter).toEqual({ media: "photos", favorites: true });
+    expect(parsed.default_timeline_filter).toEqual({ media: "photos", favorites: true, untagged: true });
   });
 
   it("never fails a user over a saved timeline filter that is not an object", () => {

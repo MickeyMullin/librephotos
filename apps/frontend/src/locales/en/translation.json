@@ -1530,6 +1530,7 @@
     "documents": "Documents",
     "showonly": "Show only",
     "favorites": "Favorites",
+    "untagged": "Untagged",
     "isdefault": "This is your default view",
     "yourdefault": "Your default: {{summary}}",
     "reset": "Reset to default",
@@ -1539,6 +1540,7 @@
       "photos": "photos",
       "videos": "videos",
       "favorites": "favorites only",
+      "untagged": "untagged only",
       "noscreenshots": "no screenshots",
       "nodocuments": "no documents",
       "everything": "everything"

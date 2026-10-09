@@ -8,7 +8,9 @@ and server-side select-all (issue #2130).
   screenshots with photos is kept (positive filters on the join, no exclude),
 * ``build_photo_queryset`` selects exactly what the timeline shows, so "select
   all, then delete" never reaches a hidden screenshot,
-* ``default_timeline_filter`` is validated strictly on the user endpoint.
+* ``default_timeline_filter`` is validated strictly on the user endpoint,
+* ``untagged`` keeps only photos with no tag, on every endpoint, and never on
+  a public view.
 """
 
 from django.contrib.auth.models import AnonymousUser
@@ -16,7 +18,7 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from api.models import AlbumDate, Photo
+from api.models import AlbumDate, Photo, Tag
 from api.tests.utils import create_test_photo, create_test_user
 from api.timeline_filter import (
     TimelineFilter,
@@ -394,3 +396,128 @@ class DefaultTimelineFilterSerializerTest(TestCase):
                 self.assertEqual(self._patch(value).status_code, 400)
         self.user.refresh_from_db()
         self.assertEqual(self.user.default_timeline_filter, {})
+
+
+class UntaggedFilterTest(TestCase):
+    """``untagged`` shows what is left to tag, the same way everywhere."""
+
+    def setUp(self):
+        self.user = create_test_user()
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+        now = timezone.now()
+        self.mixed = AlbumDate.objects.create(owner=self.user, date=now.date())
+        self.untagged = create_test_photo(owner=self.user, exif_timestamp=now)
+        self.tagged = create_test_photo(owner=self.user, exif_timestamp=now)
+        # Two tags on one photo must not make it count twice anywhere.
+        self.double = create_test_photo(owner=self.user, exif_timestamp=now)
+        self.mixed.photos.add(self.untagged, self.tagged, self.double)
+
+        earlier = now - timezone.timedelta(days=3)
+        self.tagged_only = AlbumDate.objects.create(
+            owner=self.user, date=earlier.date()
+        )
+        self.old_tagged = create_test_photo(owner=self.user, exif_timestamp=earlier)
+        self.tagged_only.photos.add(self.old_tagged)
+
+        beach = Tag.objects.create(name="beach", owner=self.user)
+        family = Tag.objects.create(name="family", owner=self.user)
+        beach.photos.add(self.tagged, self.double, self.old_tagged)
+        family.photos.add(self.double)
+
+    def _list(self, params):
+        response = self.client.get("/api/albums/date/list/", params)
+        self.assertEqual(response.status_code, 200)
+        return {row["id"]: row["numberOfItems"] for row in response.json()["results"]}
+
+    def _day(self, album, params):
+        response = self.client.get(f"/api/albums/date/{album.id}/", params)
+        self.assertEqual(response.status_code, 200)
+        results = response.json()["results"]
+        return [item["image_hash"] for item in results["items"]], results[
+            "numberOfItems"
+        ]
+
+    def test_resolver(self):
+        self.assertTrue(
+            resolve_timeline_filter(_FakeUser(), {"untagged": "1"}).untagged
+        )
+        saved = _FakeUser({"untagged": True})
+        self.assertTrue(resolve_timeline_filter(saved, {"apply_default": "1"}).untagged)
+        self.assertFalse(
+            resolve_timeline_filter(
+                saved, {"apply_default": "1", "untagged": "false"}
+            ).untagged
+        )
+        self.assertFalse(resolve_timeline_filter(saved, {}).untagged)
+
+    def test_public_view_ignores_untagged(self):
+        for params in (
+            {"untagged": "true", "public": "true"},
+            {"untagged": "true", "username": "alice"},
+        ):
+            with self.subTest(params=params):
+                self.assertFalse(resolve_timeline_filter(_FakeUser(), params).untagged)
+
+    def test_q_is_positive_isnull_on_prefix(self):
+        (q,) = TimelineFilter(untagged=True).q(_FakeUser(), prefix="photos__")
+        self.assertEqual(q.children, [("photos__tags__isnull", True)])
+        self.assertFalse(q.negated)
+
+    def test_list_keeps_untagged_photos_and_drops_tagged_only_day(self):
+        self.assertEqual(
+            self._list({}), {str(self.mixed.id): 3, str(self.tagged_only.id): 1}
+        )
+        self.assertEqual(self._list({"untagged": "true"}), {str(self.mixed.id): 1})
+
+    def test_day_page_matches_list(self):
+        hashes, count = self._day(self.mixed, {"untagged": "true"})
+        self.assertEqual(hashes, [self.untagged.image_hash])
+        self.assertEqual(count, 1)
+        hashes, count = self._day(self.mixed, {})
+        self.assertEqual(sorted(hashes), sorted(set(hashes)))
+        self.assertEqual(count, 3)
+
+    def test_saved_default_applies(self):
+        self.user.default_timeline_filter = {"untagged": True}
+        self.user.save()
+        self.assertEqual(self._list({"apply_default": "1"}), {str(self.mixed.id): 1})
+        self.assertEqual(
+            self._list({"apply_default": "1", "untagged": "false"}),
+            {str(self.mixed.id): 3, str(self.tagged_only.id): 1},
+        )
+
+    def test_combines_with_other_filters_on_the_same_photo(self):
+        # Favorite and untagged must hold for one photo, not for two photos
+        # of the same day.
+        self.tagged.rating = self.user.favorite_min_rating
+        self.tagged.save()
+        self.assertEqual(self._list({"untagged": "true", "favorite": "true"}), {})
+
+    def test_select_all_matches(self):
+        qs = build_photo_queryset(self.user, {"untagged": True})
+        self.assertEqual(list(qs), [self.untagged])
+
+    def test_select_all_tagging_the_untagged_view(self):
+        tag = Tag.objects.create(name="todo", owner=self.user)
+        response = self.client.post(
+            f"/api/tags/{tag.id}/add/",
+            {"select_all": True, "query": {"untagged": True}},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(set(tag.photos.all()), {self.untagged})
+        self.assertFalse(build_photo_queryset(self.user, {"untagged": True}).exists())
+
+    def test_saved_default_validation(self):
+        url = f"/api/user/{self.user.id}/"
+        ok = self.client.patch(
+            url, {"default_timeline_filter": {"untagged": True}}, format="json"
+        )
+        self.assertEqual(ok.status_code, 200, ok.content)
+        bad = self.client.patch(
+            url, {"default_timeline_filter": {"untagged": "true"}}, format="json"
+        )
+        self.assertEqual(bad.status_code, 400)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.default_timeline_filter, {"untagged": True})

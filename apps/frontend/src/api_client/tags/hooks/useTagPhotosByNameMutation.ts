@@ -3,6 +3,7 @@ import { notification } from "../../../service/notifications";
 import { parseWithNotification } from "../../../util/zodUtils";
 import { fetchClient, queryClient } from "../../api";
 import { Tag, TagList, TagPhotosByNameParams } from "../types";
+import { invalidateUntaggedTimeline } from "./invalidateUntaggedTimeline";
 import { TagAlbumQueryKeys } from "./useFetchTagAlbumQuery";
 import { TagsQueryKeys } from "./useFetchTagsQuery";
 
@@ -53,6 +54,7 @@ export const useTagPhotosByNameMutation = () =>
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...TagsQueryKeys] });
+      invalidateUntaggedTimeline();
       queryClient.invalidateQueries({ queryKey: [...TagAlbumQueryKeys] });
     },
   });

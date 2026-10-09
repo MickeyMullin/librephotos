@@ -16,6 +16,8 @@ const stubs = vi.hoisted(() => ({
   hideNotification: vi.fn(),
   userId: 1 as number | null,
   user: { id: 1, favorite_min_rating: 4, default_timeline_filter: { hide_screenshots: true } } as any,
+  photoTags: [] as { id: number; name: string }[],
+  photoTagsFor: vi.fn(),
 }));
 
 vi.mock("../../api_client/photos/hooks/useSetPhotosCategoryMutation", async importOriginal => ({
@@ -24,6 +26,12 @@ vi.mock("../../api_client/photos/hooks/useSetPhotosCategoryMutation", async impo
 }));
 vi.mock("../../api_client/user/hooks/useCurrentUserSelfDetailsQuery", () => ({
   useCurrentUserSelfDetailsQuery: () => ({ data: stubs.user }),
+}));
+vi.mock("../../api_client/tags/hooks", () => ({
+  useFetchPhotoTagsQuery: (photoId: string) => {
+    stubs.photoTagsFor(photoId);
+    return { data: photoId ? stubs.photoTags : undefined };
+  },
 }));
 vi.mock("../../hooks/useAuth", () => ({ useAuth: () => ({ userId: stubs.userId }) }));
 vi.mock("@mantine/notifications", () => ({
@@ -61,6 +69,8 @@ beforeEach(() => {
   stubs.hideNotification.mockReset();
   stubs.user = { id: 1, favorite_min_rating: 4, default_timeline_filter: { hide_screenshots: true } };
   stubs.userId = 1;
+  stubs.photoTags = [];
+  stubs.photoTagsFor.mockReset();
 });
 
 const screenshot = {
@@ -230,6 +240,22 @@ describe("CategorySection", () => {
     expect(radio(container, "photo").checked).toBe(true);
     expect(container.textContent).toContain("Set by you");
     expect(container.textContent).toContain("Shown in your timeline.");
+  });
+
+  it("only looks up the photo's tags when the default shows untagged photos only", async () => {
+    await renderSection({ ...screenshot, id: "p1", is_screenshot: false });
+    expect(stubs.photoTagsFor).toHaveBeenLastCalledWith("");
+    stubs.user = { ...stubs.user, default_timeline_filter: { untagged: true } };
+    await renderSection({ ...screenshot, id: "p1", is_screenshot: false });
+    expect(stubs.photoTagsFor).toHaveBeenLastCalledWith("p1");
+  });
+
+  it("says a tagged photo is filtered out of an untagged-only timeline", async () => {
+    stubs.user = { ...stubs.user, default_timeline_filter: { untagged: true } };
+    const photo = { ...screenshot, id: "p1", is_screenshot: false };
+    expect((await renderSection(photo)).textContent).toContain("Shown in your timeline.");
+    stubs.photoTags = [{ id: 7, name: "beach" }];
+    expect((await renderSection(photo)).textContent).toContain("Hidden from your timeline by your filter.");
   });
 
   it("is not offered on someone else's photo", async () => {

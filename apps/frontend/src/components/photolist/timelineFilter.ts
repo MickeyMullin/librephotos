@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 import type { BulkPhotoQuery } from "../../api_client/photos/types";
 import type { User } from "../../api_client/user/types";
 
-// The main timeline's filter (issue #2130). The same four keys are saved as
+// The main timeline's filter (issue #2130). The same five keys are saved as
 // the user's default (User.default_timeline_filter) and resolved by the
 // backend in api/timeline_filter.py.
 export type TimelineMedia = "all" | "photos" | "videos";
@@ -12,6 +12,8 @@ export type TimelineFilter = {
   hide_screenshots: boolean;
   hide_documents: boolean;
   favorites: boolean;
+  // Only photos with no tag, to find what is left to tag.
+  untagged: boolean;
 };
 
 export type SavedTimelineFilter = User["default_timeline_filter"];
@@ -21,9 +23,10 @@ export const SHOW_EVERYTHING: TimelineFilter = {
   hide_screenshots: false,
   hide_documents: false,
   favorites: false,
+  untagged: false,
 };
 
-const KEYS = ["media", "hide_screenshots", "hide_documents", "favorites"] as const;
+const KEYS = ["media", "hide_screenshots", "hide_documents", "favorites", "untagged"] as const;
 
 // The timeline route's search params: each one overrides the saved default
 // for its key; an absent key falls back to the default. "No params" is the
@@ -52,6 +55,8 @@ export function validateTimelineSearch(search: Record<string, unknown>): Timelin
   if (hideDocuments !== undefined) result.hide_documents = hideDocuments;
   const favorites = asBoolean(search.favorites);
   if (favorites !== undefined) result.favorites = favorites;
+  const untagged = asBoolean(search.untagged);
+  if (untagged !== undefined) result.untagged = untagged;
   return result;
 }
 
@@ -62,6 +67,7 @@ export function savedTimelineFilter(saved: SavedTimelineFilter | undefined): Tim
     hide_screenshots: saved?.hide_screenshots === true,
     hide_documents: saved?.hide_documents === true,
     favorites: saved?.favorites === true,
+    untagged: saved?.untagged === true,
   };
 }
 
@@ -109,6 +115,7 @@ export function timelineFilterToParams(filter: TimelineFilter | undefined): Reco
   if (filter.hide_screenshots) params.hide_screenshots = "true";
   if (filter.hide_documents) params.hide_documents = "true";
   if (filter.favorites) params.favorite = "true";
+  if (filter.untagged) params.untagged = "true";
   return params;
 }
 
@@ -120,6 +127,7 @@ export function timelineFilterToBulkQuery(filter: TimelineFilter): BulkPhotoQuer
   if (filter.hide_screenshots) query.hide_screenshots = true;
   if (filter.hide_documents) query.hide_documents = true;
   if (filter.favorites) query.favorite = true;
+  if (filter.untagged) query.untagged = true;
   return query;
 }
 
@@ -139,6 +147,7 @@ export function describeTimelineFilter(filter: TimelineFilter, t: TFunction, lan
   if (filter.media === "photos") parts.push(t("timelinefilter.summary.photos"));
   if (filter.media === "videos") parts.push(t("timelinefilter.summary.videos"));
   if (filter.favorites) parts.push(t("timelinefilter.summary.favorites"));
+  if (filter.untagged) parts.push(t("timelinefilter.summary.untagged"));
   if (filter.hide_screenshots) parts.push(t("timelinefilter.summary.noscreenshots"));
   if (filter.hide_documents) parts.push(t("timelinefilter.summary.nodocuments"));
   if (parts.length === 0) return t("timelinefilter.summary.everything");
@@ -155,6 +164,8 @@ export type TimelineItem = {
   is_screenshot: boolean;
   is_document: boolean;
   rating: number;
+  // Unknown (undefined) counts as untagged: the caller may not have the tags.
+  tagged?: boolean;
 };
 
 // Whether `filter` lets `item` into the timeline, for the lightbox's
@@ -165,5 +176,6 @@ export function timelineFilterShows(filter: TimelineFilter, item: TimelineItem, 
   if (filter.hide_screenshots && item.is_screenshot) return false;
   if (filter.hide_documents && item.is_document) return false;
   if (filter.favorites && item.rating < favoriteMinRating) return false;
+  if (filter.untagged && item.tagged) return false;
   return true;
 }

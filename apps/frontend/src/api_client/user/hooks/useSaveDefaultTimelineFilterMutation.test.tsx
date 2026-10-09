@@ -75,6 +75,7 @@ describe("compactTimelineFilter", () => {
       media: "photos",
       hide_documents: true,
     });
+    expect(compactTimelineFilter({ ...SHOW_EVERYTHING, untagged: true })).toEqual({ untagged: true });
   });
 });
 

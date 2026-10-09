@@ -172,6 +172,7 @@ export const BulkPhotoQuery = z.object({
   media: z.enum(["all", "photos", "videos"]).optional(),
   hide_screenshots: z.boolean().optional(),
   hide_documents: z.boolean().optional(),
+  untagged: z.boolean().optional(),
   person: z.number().optional(),
   folder: z.string().optional(),
   username: z.string().optional(),

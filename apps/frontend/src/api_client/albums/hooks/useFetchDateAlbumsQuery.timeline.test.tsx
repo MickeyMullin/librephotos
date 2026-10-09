@@ -23,7 +23,13 @@ vi.mock("../../api", async () => {
 const { useFetchDateAlbumsQuery } = await import("./useFetchDateAlbumsQuery");
 const { useFetchDateAlbumQuery } = await import("./useFetchDateAlbumQuery");
 
-const filter = { media: "photos" as const, hide_screenshots: true, hide_documents: false, favorites: false };
+const filter = {
+  media: "photos" as const,
+  hide_screenshots: true,
+  hide_documents: false,
+  favorites: false,
+  untagged: false,
+};
 
 beforeAll(() => {
   // @ts-ignore

@@ -19,6 +19,7 @@ import {
   IconFilter as Filter,
   IconScreenshot as Screenshot,
   IconStar as Star,
+  IconTagOff as TagOff,
 } from "@tabler/icons-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -53,7 +54,8 @@ function SectionLabel({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 // The main timeline's Filter button and popover (issue #2130): media type,
-// screenshots and documents to hide, favorites only, and the saved default.
+// screenshots and documents to hide, favorites or untagged only, and the
+// saved default.
 export function TimelineFilterPopover({
   current,
   saved,
@@ -162,6 +164,17 @@ export function TimelineFilterPopover({
               <Group gap={6} wrap="nowrap">
                 <Star size={16} color="var(--mantine-color-yellow-6)" />
                 {t("timelinefilter.favorites")}
+              </Group>
+            }
+          />
+          <Switch
+            checked={current.untagged}
+            onChange={event => set({ untagged: event.currentTarget.checked })}
+            disabled={saving}
+            label={
+              <Group gap={6} wrap="nowrap">
+                <TagOff size={16} color="var(--mantine-color-teal-6)" />
+                {t("timelinefilter.untagged")}
               </Group>
             }
           />

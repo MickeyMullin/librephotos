@@ -21,6 +21,7 @@ export function compactTimelineFilter(filter: TimelineFilter): User["default_tim
   if (filter.hide_screenshots) saved.hide_screenshots = true;
   if (filter.hide_documents) saved.hide_documents = true;
   if (filter.favorites) saved.favorites = true;
+  if (filter.untagged) saved.untagged = true;
   return saved;
 }
 

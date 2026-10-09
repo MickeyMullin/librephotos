@@ -22,9 +22,9 @@ import { getPhotosFlatFromGroupedByDate } from "../../util/util";
 
 export const Route = createFileRoute("/_protected/")({
   component: TimestampPhotos,
-  // ?media=, ?hide_screenshots=, ?hide_documents=, ?favorites= override the
-  // user's saved default timeline filter key by key; none of them is the
-  // default.
+  // ?media=, ?hide_screenshots=, ?hide_documents=, ?favorites=, ?untagged=
+  // override the user's saved default timeline filter key by key; none of
+  // them is the default.
   validateSearch: validateTimelineSearch,
 });
 

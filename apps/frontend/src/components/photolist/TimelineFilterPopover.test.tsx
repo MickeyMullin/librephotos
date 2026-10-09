@@ -119,6 +119,11 @@ describe("TimelineFilterPopover", () => {
       switchLabelled("Favorites").click();
     });
     expect(onChange).toHaveBeenLastCalledWith({ ...SHOW_EVERYTHING, favorites: true });
+
+    await act(async () => {
+      switchLabelled("Untagged").click();
+    });
+    expect(onChange).toHaveBeenLastCalledWith({ ...SHOW_EVERYTHING, untagged: true });
   });
 
   it("disables reset and save on the default view", async () => {

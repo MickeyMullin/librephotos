@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { notification } from "../../../service/notifications";
 import { fetchClient, queryClient } from "../../api";
 import { DeleteTagParams } from "../types";
+import { invalidateUntaggedTimeline } from "./invalidateUntaggedTimeline";
 import { TagsQueryKeys } from "./useFetchTagsQuery";
 
 export const useDeleteTagMutation = () =>
@@ -12,5 +13,6 @@ export const useDeleteTagMutation = () =>
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...TagsQueryKeys] });
+      invalidateUntaggedTimeline();
     },
   });

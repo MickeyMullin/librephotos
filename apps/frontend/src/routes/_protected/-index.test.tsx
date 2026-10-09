@@ -93,6 +93,7 @@ describe("the main timeline filter", () => {
       hide_screenshots: true,
       hide_documents: false,
       favorites: false,
+      untagged: false,
     });
     expect(stubs.listProps.photosetQuery).toEqual({ hide_screenshots: true });
   });
@@ -105,9 +106,17 @@ describe("the main timeline filter", () => {
       hide_screenshots: false,
       hide_documents: true,
       favorites: false,
+      untagged: false,
     });
     // Select-all acts on exactly this view.
     expect(stubs.listProps.photosetQuery).toEqual({ media: "photos", hide_documents: true });
+  });
+
+  it("sends untagged-only to the queries and to select-all", async () => {
+    stubs.search = { untagged: true };
+    const { options } = await renderTimeline();
+    expect(options.timelineFilter.untagged).toBe(true);
+    expect(stubs.listProps.photosetQuery).toEqual({ hide_screenshots: true, untagged: true });
   });
 
   it("waits for the saved default before fetching", async () => {
@@ -140,7 +149,7 @@ describe("the main timeline filter", () => {
     const [request, callbacks] = stubs.saveDefault.mock.calls[0];
     expect(request).toEqual({
       userId: 1,
-      filter: { media: "all", hide_screenshots: true, hide_documents: true, favorites: false },
+      filter: { media: "all", hide_screenshots: true, hide_documents: true, favorites: false, untagged: false },
     });
     await act(async () => {
       callbacks.onSuccess();

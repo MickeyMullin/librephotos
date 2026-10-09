@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { notification } from "../../../service/notifications";
 import { fetchClient, queryClient } from "../../api";
 import { TagPhotosParams } from "../types";
+import { invalidateUntaggedTimeline } from "./invalidateUntaggedTimeline";
 import { TagAlbumQueryKeys } from "./useFetchTagAlbumQuery";
 import { TagsQueryKeys } from "./useFetchTagsQuery";
 
@@ -13,6 +14,7 @@ export const useAddPhotosToTagMutation = () =>
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: [...TagsQueryKeys] });
+      invalidateUntaggedTimeline();
       queryClient.invalidateQueries({ queryKey: [...TagAlbumQueryKeys, `${id}`] });
     },
   });
@@ -25,6 +27,7 @@ export const useRemovePhotosFromTagMutation = () =>
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: [...TagsQueryKeys] });
+      invalidateUntaggedTimeline();
       queryClient.invalidateQueries({ queryKey: [...TagAlbumQueryKeys, `${id}`] });
     },
   });

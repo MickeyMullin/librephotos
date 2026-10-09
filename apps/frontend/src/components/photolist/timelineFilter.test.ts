@@ -40,7 +40,13 @@ describe("resolveTimelineFilter", () => {
       hide_screenshots: false,
       hide_documents: true,
       favorites: false,
+      untagged: false,
     });
+  });
+
+  test("a saved untagged-only default can be turned off from the URL", () => {
+    expect(resolveTimelineFilter({ untagged: true }, {}).untagged).toBe(true);
+    expect(resolveTimelineFilter({ untagged: true }, { untagged: false }).untagged).toBe(false);
   });
 });
 
@@ -52,9 +58,10 @@ describe("validateTimelineSearch", () => {
         hide_screenshots: true,
         hide_documents: "false",
         favorites: "yes",
+        untagged: "true",
         page: 3,
       })
-    ).toEqual({ media: "videos", hide_screenshots: true, hide_documents: false });
+    ).toEqual({ media: "videos", hide_screenshots: true, hide_documents: false, untagged: true });
   });
 
   test("rejects a media value the timeline does not offer", () => {
@@ -74,13 +81,25 @@ describe("timelineSearchFor", () => {
 
   test("round-trips through resolveTimelineFilter", () => {
     const saved = { media: "photos" as const, favorites: true };
-    const wanted = { media: "all" as const, hide_screenshots: true, hide_documents: false, favorites: false };
+    const wanted = {
+      media: "all" as const,
+      hide_screenshots: true,
+      hide_documents: false,
+      favorites: false,
+      untagged: true,
+    };
     expect(resolveTimelineFilter(saved, timelineSearchFor(wanted, saved))).toEqual(wanted);
   });
 });
 
 describe("request params, select-all query and query key", () => {
-  const filter = { media: "photos" as const, hide_screenshots: true, hide_documents: true, favorites: true };
+  const filter = {
+    media: "photos" as const,
+    hide_screenshots: true,
+    hide_documents: true,
+    favorites: true,
+    untagged: true,
+  };
 
   test("the date-album requests send the resolved filter", () => {
     expect(timelineFilterToParams(filter)).toEqual({
@@ -88,6 +107,7 @@ describe("request params, select-all query and query key", () => {
       hide_screenshots: "true",
       hide_documents: "true",
       favorite: "true",
+      untagged: "true",
     });
     expect(timelineFilterToParams(SHOW_EVERYTHING)).toEqual({});
     expect(timelineFilterToParams(undefined)).toEqual({});
@@ -99,6 +119,7 @@ describe("request params, select-all query and query key", () => {
       hide_screenshots: true,
       hide_documents: true,
       favorite: true,
+      untagged: true,
     });
     expect(timelineFilterToBulkQuery(SHOW_EVERYTHING)).toEqual({});
   });
@@ -109,6 +130,7 @@ describe("request params, select-all query and query key", () => {
     expect(timelineFilterKey({ ...SHOW_EVERYTHING, hide_screenshots: true })).toBe("hide_screenshots=true");
     expect(timelineFilterKey({ ...filter })).toBe(timelineFilterKey(filter));
     expect(timelineFilterKey(filter)).not.toBe(timelineFilterKey({ ...filter, favorites: false }));
+    expect(timelineFilterKey({ ...SHOW_EVERYTHING, untagged: true })).toBe("untagged=true");
   });
 });
 
@@ -116,6 +138,7 @@ describe("helpers", () => {
   test("countActiveFilters and sameTimelineFilter", () => {
     expect(countActiveFilters(SHOW_EVERYTHING)).toBe(0);
     expect(countActiveFilters({ ...SHOW_EVERYTHING, media: "videos", hide_documents: true })).toBe(2);
+    expect(countActiveFilters({ ...SHOW_EVERYTHING, untagged: true })).toBe(1);
     expect(sameTimelineFilter(SHOW_EVERYTHING, { ...SHOW_EVERYTHING })).toBe(true);
     expect(sameTimelineFilter(SHOW_EVERYTHING, { ...SHOW_EVERYTHING, favorites: true })).toBe(false);
   });
@@ -130,6 +153,7 @@ describe("helpers", () => {
       new Intl.ListFormat("de", { style: "short", type: "unit" }).format(["photos", "no screenshots", "no documents"])
     );
     expect(describeTimelineFilter(filter, i18n.t, "not a language")).toBe("photos, no screenshots, no documents");
+    expect(describeTimelineFilter({ ...SHOW_EVERYTHING, untagged: true }, i18n.t, "en")).toBe("untagged only");
   });
 
   test("timelineFilterShows mirrors the backend filter", () => {
@@ -138,5 +162,9 @@ describe("helpers", () => {
     expect(timelineFilterShows({ ...SHOW_EVERYTHING, hide_screenshots: true }, screenshot, 4)).toBe(false);
     expect(timelineFilterShows({ ...SHOW_EVERYTHING, favorites: true }, { ...screenshot, rating: 4 }, 4)).toBe(true);
     expect(timelineFilterShows({ ...SHOW_EVERYTHING, media: "videos" }, screenshot, 4)).toBe(false);
+    const untaggedOnly = { ...SHOW_EVERYTHING, untagged: true };
+    expect(timelineFilterShows(untaggedOnly, { ...screenshot, tagged: true }, 4)).toBe(false);
+    expect(timelineFilterShows(untaggedOnly, { ...screenshot, tagged: false }, 4)).toBe(true);
+    expect(timelineFilterShows(SHOW_EVERYTHING, { ...screenshot, tagged: true }, 4)).toBe(true);
   });
 });

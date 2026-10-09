@@ -14,6 +14,7 @@ import {
   type PhotoCategory,
 } from "../../api_client/photos/hooks/useSetPhotosCategoryMutation";
 import type { Photo as PhotoType } from "../../api_client/photos/types";
+import { useFetchPhotoTagsQuery } from "../../api_client/tags/hooks";
 import { useCurrentUserSelfDetailsQuery } from "../../api_client/user/hooks/useCurrentUserSelfDetailsQuery";
 import type { User } from "../../api_client/user/types";
 import { useAuth } from "../../hooks/useAuth";
@@ -89,6 +90,10 @@ export function CategorySection({ photoDetail }: Props) {
   const { data } = useCurrentUserSelfDetailsQuery();
   const user = data as User | undefined;
   const setCategory = useSetPhotosCategoryMutation();
+  const savedFilter = savedTimelineFilter(user?.default_timeline_filter);
+  // Same query (and cache entry) as the lightbox's tag list; only fetched
+  // when the saved default hides tagged photos.
+  const { data: photoTags } = useFetchPhotoTagsQuery(savedFilter.untagged ? photoDetail.id : "");
 
   const fromServer = stateFromServer(photoDetail);
   // The choice shows at once; the photo detail refetches behind it. Keyed by
@@ -105,12 +110,13 @@ export function CategorySection({ photoDetail }: Props) {
 
   const state = optimistic?.imageHash === fromServer.imageHash ? optimistic : fromServer;
   const shownInTimeline = timelineFilterShows(
-    savedTimelineFilter(user?.default_timeline_filter),
+    savedFilter,
     {
       video: photoDetail.video,
       is_screenshot: state.is_screenshot,
       is_document: state.is_document,
       rating: photoDetail.rating,
+      tagged: (photoTags?.length ?? 0) > 0,
     },
     user?.favorite_min_rating ?? 0
   );

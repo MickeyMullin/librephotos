@@ -138,8 +138,9 @@ class User(AbstractUser):
     stack_raw_jpeg = models.BooleanField(default=True)
     slideshow_interval = models.IntegerField(default=5)
     # What the main timeline shows when its URL names no filter: any of
-    # "media" ("all"/"photos"/"videos"), "hide_screenshots", "hide_documents"
-    # and "favorites". Empty shows everything. See api.timeline_filter.
+    # "media" ("all"/"photos"/"videos"), "hide_screenshots", "hide_documents",
+    # "favorites" and "untagged". Empty shows everything. See
+    # api.timeline_filter.
     default_timeline_filter = models.JSONField(default=dict, blank=True)
 
     # Duplicate detection settings

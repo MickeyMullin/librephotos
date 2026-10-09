@@ -31,6 +31,7 @@ export const TimelineFilterDefault = z
     hide_screenshots: z.boolean().optional().catch(undefined),
     hide_documents: z.boolean().optional().catch(undefined),
     favorites: z.boolean().optional().catch(undefined),
+    untagged: z.boolean().optional().catch(undefined),
   })
   .catch({});
 export type TimelineFilterDefault = z.infer<typeof TimelineFilterDefault>;
