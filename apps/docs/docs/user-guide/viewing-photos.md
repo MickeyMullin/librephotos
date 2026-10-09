@@ -119,7 +119,22 @@ Shows when the photo was taken. You can click the edit button to modify the date
 
 ### File & Camera Info
 
-Near the top of the sidebar, LibrePhotos shows a summary of the current file: the filename (a link that opens the original file in a new tab), the image dimensions and file size, and — when the photo has more than one file — the **+N formats** toggle described under [File Variants](#file-variants) below. When the photo carries camera EXIF, a second line lists the camera and lens with the aperture, shutter speed, focal length and ISO; this line is hidden if the photo has no camera information. A **Show more** button reveals additional details such as the file path, subject distance, digital zoom ratio, 35 mm-equivalent focal length and any duplicate file copies. For the full list of EXIF fields, see [EXIF Data](./exif-data.md).
+Near the top of the sidebar, LibrePhotos shows a summary of the current file: the filename (a link that opens the original file in a new tab; hover it to see the whole name when it is cut off), the image dimensions and file size, and — when the photo has more than one file — the **+N formats** toggle described under [File Variants](#file-variants) below. When the photo carries camera EXIF, a second line lists the camera and lens with the aperture, shutter speed, focal length and ISO; this line is hidden if the photo has no camera information. A **Show more** button reveals additional details such as the file path, subject distance, digital zoom ratio, 35 mm-equivalent focal length and any duplicate file copies. For the full list of EXIF fields, see [EXIF Data](./exif-data.md).
+
+### Replacing a photo with an edited version
+
+:::note
+Replacing a photo is not in a release yet; it ships with the first release after 1.2.1.
+:::
+
+To edit a photo in another program and put the result back in your library, click the **Replace** icon next to the filename and pick the edited file. A confirmation says what the file will be called before anything changes.
+
+- The new file takes the original's place in your library folder and keeps the original's name, so anything you encode in your filenames survives. Only when the format changes (for example a HEIC exported as JPEG) does the extension change to match.
+- The photo stays the same photo: its albums, tags, people, rating, favorite, date, location, caption and sharing are kept. LibrePhotos does not read the date, place or rating back from the new file, because editors often drop or reset them.
+- The original is not deleted. LibrePhotos keeps a copy in its data folder (the `protected_media` directory of your data path), under `replaced_originals/<user id>/<date and time>/`, followed by the original's path inside your library. That folder is outside your library, so a rescan never imports it as a second photo; to undo a replacement, copy the file back by hand.
+- Thumbnails are rebuilt at once. When the edit keeps the framing (color, exposure or retouching), the faces and their names are kept. After a crop, or with a different picture, the faces are detected again. AI tags, the similarity index and recognized text are refreshed in the background.
+
+The button is shown on your own photos only, not on videos or RAW files, and works only while uploads are allowed (the **Allow uploads** switch in the admin area, see [Uploading](./upload.md)), because the file travels through the same upload as new photos.
 
 ### File Variants
 

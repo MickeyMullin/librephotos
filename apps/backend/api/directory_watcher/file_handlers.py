@@ -10,9 +10,13 @@ import logging
 import os
 import tempfile
 from functools import partial
+from io import BytesIO
 
+import numpy as np
+import PIL.Image
 import pytz
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Q
 
@@ -215,15 +219,57 @@ def _discard_cheap_derived_content(photo: Photo, old_hash: str) -> None:
         thumbnail.save(update_fields=["dominant_color"])
 
 
-def _discard_derived_content(photo: Photo, old_hash: str) -> None:
+def _discard_derived_content(
+    photo: Photo, old_hash: str, keep_faces: bool = False
+) -> None:
     """Throw away everything that still describes the picture that was replaced.
 
     The thumbnails are named after the old image hash, so they go with it.
+    ``keep_faces`` leaves the Face rows alone for ``_recrop_faces`` to move
+    onto the new hash once the new thumbnails exist.
     """
     _discard_cheap_derived_content(photo, old_hash)
-    _discard_faces(photo)
+    if not keep_faces:
+        _discard_faces(photo)
 
     transaction.on_commit(partial(delete_thumbnail_files, old_hash))
+
+
+def _recrop_faces(photo: Photo) -> None:
+    """Cut a kept photo's face crops again, from its new big thumbnail.
+
+    Only for a picture whose framing did not change (a retouch): the face boxes
+    are pixels of the big thumbnail, which is always rendered at the same
+    height, so the same boxes still frame the same faces. The crops are named
+    after the image hash and served by parsing it back out of the file name,
+    so each one is saved again under the new hash and the old file removed.
+    """
+    try:
+        big = np.array(PIL.Image.open(photo.thumbnail.thumbnail_big.path))
+    except Exception:
+        logger.warning(
+            f"could not open the new thumbnail of {photo.pk} to re-crop its faces",
+            exc_info=True,
+        )
+        return
+
+    for idx, face in enumerate(photo.faces.order_by("pk")):
+        old_name = face.image.name if face.image else None
+        crop = PIL.Image.fromarray(
+            big[
+                face.location_top : face.location_bottom,
+                face.location_left : face.location_right,
+            ]
+        )
+        if crop.mode in ("RGBA", "P"):
+            crop = crop.convert("RGB")
+        buffer = BytesIO()
+        crop.save(buffer, format="JPEG")
+        face.image.save(
+            f"{photo.image_hash}_{idx}.jpg", ContentFile(buffer.getvalue()), save=True
+        )
+        if old_name and old_name != face.image.name:
+            face.image.storage.delete(old_name)
 
 
 def _regenerate_thumbnails(photo: Photo) -> None:
@@ -245,7 +291,9 @@ def _regenerate_thumbnails(photo: Photo) -> None:
         )
 
 
-def reindex_replaced_file(user, path, hash_value) -> Photo | None:
+def reindex_replaced_file(
+    user, path, hash_value, verdict=None, keep_faces=False
+) -> Photo | None:
     """Re-point the rows of ``path`` at its new content after an in-place change.
 
     ``File.create`` matches on path alone, so a file whose bytes changed under
@@ -262,6 +310,11 @@ def reindex_replaced_file(user, path, hash_value) -> Photo | None:
     thumbnails and the cached transcode are rebuilt but the faces stay.
 
     The Photo rows survive with their ids, albums and shares in every case.
+
+    ``verdict`` overrides the perceptual-hash comparison, for a caller that
+    knows the picture changed (a deliberate replacement through the API).
+    ``keep_faces`` keeps a new picture's faces and re-crops them under the new
+    hash, for a replacement with the same framing.
 
     Returns the Photo the changed file is the main file of, if any.
     """
@@ -301,7 +354,8 @@ def reindex_replaced_file(user, path, hash_value) -> Photo | None:
         Photo.objects.filter(main_file=existing).values_list("pk", flat=True)
     )
 
-    verdict = _picture_verdict(_photo_to_compare(affected, user, old_hash), path)
+    if verdict is None:
+        verdict = _picture_verdict(_photo_to_compare(affected, user, old_hash), path)
     logger.info(f"content of {path} changed ({verdict}), re-keying as {hash_value}")
 
     main_photo = None
@@ -325,7 +379,7 @@ def reindex_replaced_file(user, path, hash_value) -> Photo | None:
                 _discard_cheap_derived_content(photo, old_hash)
                 rebuild_photo_ids.append(photo.pk)
                 continue
-            _discard_derived_content(photo, old_hash)
+            _discard_derived_content(photo, old_hash, keep_faces=keep_faces)
             photo.image_hash = hash_value
             photo.added_on = datetime.datetime.now().replace(tzinfo=pytz.utc)
             photo.save(save_metadata=False)
@@ -333,6 +387,8 @@ def reindex_replaced_file(user, path, hash_value) -> Photo | None:
 
     for photo in Photo.objects.filter(pk__in=rebuild_photo_ids):
         _regenerate_thumbnails(photo)
+        if keep_faces and verdict == NEW_PICTURE:
+            _recrop_faces(photo)
 
     if verdict == NEW_PICTURE and main_photo:
         _attach_embedded_motion_video(user, main_photo, new_file)

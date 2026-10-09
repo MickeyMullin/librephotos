@@ -643,6 +643,18 @@
         "document": "Marked as document"
       },
       "undo": "Undo"
+    },
+    "replace": {
+      "button": "Replace with an edited version",
+      "uploadsoff": "Replacing a photo needs uploads, which are turned off in the admin area",
+      "title": "Replace photo",
+      "confirm": "Replace {{current}} with {{replacement}}?",
+      "samename": "The new file takes the original's place and keeps its name. The photo keeps its albums, tags, people, rating and dates.",
+      "renamed": "The new file takes the original's place as {{name}}, since its format is different. The photo keeps its albums, tags, people, rating and dates.",
+      "backup": "The original is not deleted: LibrePhotos keeps a copy in its data folder, under replaced_originals.",
+      "uploading": "Uploading",
+      "action": "Replace",
+      "failed": "The photo could not be replaced."
     }
   },
   "exif": {
@@ -1323,7 +1335,10 @@
       "document_one": "{{count}} item marked as document.",
       "document_other": "{{count}} items marked as document."
     },
-    "setcategoryfailed": "The category could not be changed. Please try again."
+    "setcategoryfailed": "The category could not be changed. Please try again.",
+    "replacedtitle": "Photo replaced",
+    "replacedkeptfaces": "{{name}} was replaced. Its faces were kept.",
+    "replacedfacesagain": "{{name}} was replaced. Its faces will be detected again."
   },
   "rules": {
     "1": "Local time from DATE_TIME_ORIGINAL Exif tag",

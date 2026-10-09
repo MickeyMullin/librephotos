@@ -25,6 +25,8 @@ from api.models import Photo
 from api.models.file import calculate_hash, calculate_hash_b64
 from api.models.photo_caption import PhotoCaption
 from api.photo_faces import extract_faces
+from api.photo_replace import ReplaceError, replace_photo_file
+from api.views.photos import _get_photo_filter_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -272,3 +274,50 @@ class UploadPhotosChunkedComplete(UploaderScopedMixin, ChunkedUploadCompleteView
                 request.POST.get("device_modified_at")
             ),
         )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class ReplacePhotoChunkedComplete(UploadPhotosChunkedComplete):
+    """Finish a chunked upload by putting it in place of an existing photo's file.
+
+    Takes the same ``upload_id`` and ``md5`` as ``/api/upload/complete/`` plus
+    ``photo`` (its id or image hash) and the uploaded ``filename``. Only the
+    uploader's own photos can be replaced; see ``api.photo_replace``.
+    """
+
+    replace_result = None
+
+    def on_completion(self, uploaded_file, request):
+        user = authenticate_upload_request(request)
+        lookup = request.POST.get("photo") or ""
+        photo = (
+            Photo.objects.owned_by(user)
+            .filter(removed=False, **_get_photo_filter_kwargs(lookup))
+            .select_related("main_file", "thumbnail")
+            .first()
+            if lookup
+            else None
+        )
+        filename = request.POST.get("filename") or ""
+        try:
+            if photo is None:
+                raise ReplaceError(404, "Unknown photo")
+            replaced, _backup, kept_faces = replace_photo_file(
+                user,
+                photo,
+                uploaded_file.file.path,
+                get_valid_filename(filename) if filename.strip() else "",
+            )
+        except ReplaceError as error:
+            raise ChunkedUploadError(status=error.status, detail=error.detail)
+        finally:
+            self.delete_chunked_upload(request, uploaded_file)
+
+        self.replace_result = {
+            "id": str(replaced.pk),
+            "image_hash": replaced.image_hash,
+            "kept_faces": kept_faces,
+        }
+
+    def get_response_data(self, chunked_upload, request):
+        return self.replace_result or {}

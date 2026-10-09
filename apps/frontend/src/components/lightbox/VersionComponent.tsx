@@ -7,6 +7,7 @@ import type { FileVariant } from "../../api_client/photos/types";
 import { Photo as PhotoType } from "../../api_client/photos/types";
 import { BreadcrumbPath } from "../common/BreadcrumbPath";
 import { FileInfoComponent } from "./FileInfoComponent";
+import { ReplacePhotoButton } from "./ReplacePhotoButton";
 
 /**
  * Get file variant type badge color and label
@@ -28,9 +29,11 @@ function getVariantBadgeProps(variant: FileVariant): { color: string; label: str
  */
 function PhotoInfoSection({
   photoDetail,
+  isPublic,
   t,
 }: {
   photoDetail: PhotoType;
+  isPublic: boolean;
   t: (key: string, fallback?: string) => string;
 }) {
   const [showVariants, setShowVariants] = useState(false);
@@ -48,12 +51,15 @@ function PhotoInfoSection({
         <Group justify="flex-start">
           <Photo />
           <div>
-            <Anchor href={`${serverAddress}/media/photos/${photoDetail.image_hash}`} target="_blank">
-              {/* Clamped to one line; the tooltip shows the whole name. */}
-              <Text fw={800} lineClamp={1} style={{ maxWidth: 225 }} title={fileName}>
-                {fileName}
-              </Text>
-            </Anchor>
+            <Group gap={4} wrap="nowrap">
+              <Anchor href={`${serverAddress}/media/photos/${photoDetail.image_hash}`} target="_blank">
+                {/* Clamped to one line; the tooltip shows the whole name. */}
+                <Text fw={800} lineClamp={1} style={{ maxWidth: 225 }} title={fileName}>
+                  {fileName}
+                </Text>
+              </Anchor>
+              {!isPublic && <ReplacePhotoButton photoDetail={photoDetail} fileName={fileName} />}
+            </Group>
             <Group gap="xs">
               <FileInfoComponent info={`${photoDetail.height} x ${photoDetail.width}`} />
               {Math.round((photoDetail.size / 1024 / 1024) * 100) / 100 < 1 ? (
@@ -226,7 +232,7 @@ export function VersionComponent(props: Readonly<{ photoDetail: PhotoType; isPub
     <div>
       <Stack align="flex-start">
         {/* Basic photo information with file variants toggle */}
-        <PhotoInfoSection photoDetail={photoDetail} t={t} />
+        <PhotoInfoSection photoDetail={photoDetail} isPublic={isPublic} t={t} />
 
         {/* Camera equipment and settings */}
         <CameraInfoSection photoDetail={photoDetail} />

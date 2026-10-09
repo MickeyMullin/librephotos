@@ -447,6 +447,8 @@ urlpatterns = [
     re_path(r"^api/photo/share/?$", public_photos.SetPhotoShare.as_view()),
     re_path(r"^api/timezones", timezone.TimeZoneView.as_view()),
     re_path(r"^api/geocode/search", geocode.GeocodeSearchView.as_view()),
+    # Before the two below: their patterns are unanchored and would take it.
+    re_path(r"^api/upload/replace/$", upload.ReplacePhotoChunkedComplete.as_view()),
     re_path(r"api/upload/complete/", upload.UploadPhotosChunkedComplete.as_view()),
     re_path(r"api/upload/", upload.UploadPhotosChunked.as_view()),
     # Mobile-v2 delta-sync feeds (doc 04)

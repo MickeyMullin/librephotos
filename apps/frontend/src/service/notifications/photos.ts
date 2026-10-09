@@ -20,6 +20,14 @@ function removePhotos(numberOfPhotos: number) {
   });
 }
 
+function replacedPhoto(name: string, keptFaces: boolean) {
+  showNotification({
+    message: keptFaces ? i18n.t("toasts.replacedkeptfaces", { name }) : i18n.t("toasts.replacedfacesagain", { name }),
+    title: i18n.t("toasts.replacedtitle"),
+    color: "teal",
+  });
+}
+
 function downloadStarting() {
   showNotification({
     message: i18n.t("toasts.downloadstarting"),
@@ -217,6 +225,7 @@ export const photos = {
   downloadFailed,
   downloadStarting,
   removePhotos,
+  replacedPhoto,
   rotatePhotos,
   savePhotoCaptions,
   scanDirectoryRequired,

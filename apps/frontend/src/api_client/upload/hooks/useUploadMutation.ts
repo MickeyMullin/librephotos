@@ -9,7 +9,7 @@ export const UploadResponse = z.object({
   offset: z.number(),
 });
 
-const upload = (options: UploadOptions) => {
+export const uploadChunk = (options: UploadOptions) => {
   const headers = new Headers({
     "Content-Range": `bytes ${options.offset}-${options.offset + options.chunk_size - 1}/${options.chunk_size}`,
   });
@@ -24,7 +24,7 @@ const upload = (options: UploadOptions) => {
 
 export const useUploadMutation = () =>
   useMutation({
-    mutationFn: upload,
+    mutationFn: uploadChunk,
     // Don't invalidate queries on every chunk upload
     // Invalidation will happen when the entire file upload is complete
   });
