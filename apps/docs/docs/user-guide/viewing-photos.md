@@ -80,7 +80,7 @@ The toolbar at the top provides quick actions. From left to right:
 
 - **Slideshow** - Start or stop an automatic slideshow. While it runs, a dropdown lets you choose the interval (3, 5, 10, 15 or 30 seconds).
 - **Zoom in / Zoom out** - Magnify the image. Available for still photos only, not videos.
-- **Fullscreen** - Enter or leave fullscreen mode for distraction-free viewing.
+- **Fullscreen** - Enter or leave fullscreen mode for distraction-free viewing. On an iPhone, where no browser lets a web page go fullscreen, it hides the toolbar, thumbnails and info panel instead and shows the photo on black; tap the button in the corner to leave. The browser's own address bar stays visible.
 - **Copy to clipboard** - Copy the photo as an image to your clipboard, ready to paste into a chat, a document or an email. It copies the display-size version the viewer shows; use **Download** for the original file. The button is shown for still photos, and only when LibrePhotos is served over HTTPS, because browsers allow clipboard access on secure pages only.
 - **Hide / Show** (eye icon) - Hide the photo from the main timeline, or unhide it.
 - **Favorite** (star icon) - Mark the photo as a favorite, or remove the mark.

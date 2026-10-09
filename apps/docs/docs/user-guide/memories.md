@@ -58,7 +58,7 @@ Place names come from reverse geocoding. If you have not run **Add Geolocation**
 
 ## Playback
 
-Playing a memory opens the normal [lightbox](./viewing-photos.md) already in slideshow mode, so everything you know from there still works: the interval dropdown (3, 5, 10, 15 or 30 seconds, defaulting to your **Settings → Slideshow interval**), `s` to stop and start, arrow keys to step through by hand, `f` for fullscreen and `Esc` to close.
+Playing a memory opens the normal [lightbox](./viewing-photos.md) already in slideshow mode, so everything you know from there still works: the interval dropdown (3, 5, 10, 15 or 30 seconds, defaulting to your **Settings → Slideshow interval**), `s` to stop and start, arrow keys to step through by hand, `g` for fullscreen and `Esc` to close.
 
 Picking a different memory always starts its slideshow from the beginning.
 

@@ -1,7 +1,8 @@
 import { Carousel } from "@mantine/carousel";
 import "@mantine/carousel/styles.css";
-import { Modal, Stack } from "@mantine/core";
-import { useFullscreen, useHotkeys } from "@mantine/hooks";
+import { ActionIcon, Modal, Stack } from "@mantine/core";
+import { useHotkeys } from "@mantine/hooks";
+import { IconArrowsMinimize as Minimize } from "@tabler/icons-react";
 import { useGesture } from "@use-gesture/react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -29,7 +30,13 @@ import { LightboxControls } from "./LightboxControls";
 import { MediaDisplay } from "./MediaDisplay";
 import { Sidebar } from "./Sidebar";
 import { ThumbnailNavigation } from "./ThumbnailNavigation";
+import { useLightboxFullscreen } from "./useLightboxFullscreen";
 import { requestLightboxSeek, SEEK_LONG_STEP_SECONDS, SEEK_STEP_SECONDS } from "./VideoPlayer";
+
+// On a phone 100vh is the height with the browser's toolbars hidden, so the
+// bottom of the lightbox (the thumbnails, the end of a photo) sat under them;
+// 100dvh follows the toolbars. Desktop browsers treat both the same.
+const VIEWPORT_HEIGHT = typeof CSS !== "undefined" && CSS.supports?.("height", "100dvh") ? "100dvh" : "100vh";
 
 export function ContentViewer({
   mainSrc,
@@ -74,9 +81,10 @@ export function ContentViewer({
   const [localSlideshowInterval, setLocalSlideshowInterval] = useState<number | null>(null);
   const [slideshowProgress, setSlideshowProgress] = useState(0);
 
-  // Fullscreen support
-  const contentRef = useRef<HTMLDivElement>(null);
-  const { toggle: toggleFullscreen, fullscreen: isFullscreen } = useFullscreen(contentRef);
+  // Fullscreen support, with an in-page fallback where the browser has no
+  // Fullscreen API for pages (every browser on iPhone).
+  const { isFullscreen, immersive, toggle: toggleFullscreen, exit: exitFullscreen } = useLightboxFullscreen();
+  const showSidebar = lightboxSidebarShow && !immersive;
 
   // Fetch user settings for default slideshow interval (skip on public pages)
   const { data: userSelfDetails } = useCurrentUserSelfDetailsQuery(isPublic);
@@ -285,10 +293,18 @@ export function ContentViewer({
 
   // Handle close - exit fullscreen first if active
   const handleClose = () => {
-    if (isFullscreen) {
-      document.exitFullscreen?.();
-    }
+    exitFullscreen();
     onCloseRequest();
+  };
+
+  // Escape (the modal's onClose) leaves the in-page fullscreen first, the way
+  // it leaves real fullscreen before it closes anything.
+  const handleModalClose = () => {
+    if (immersive) {
+      exitFullscreen();
+    } else {
+      handleClose();
+    }
   };
 
   // Add keyboard navigation using Mantine's useHotkeys
@@ -391,21 +407,20 @@ export function ContentViewer({
     if (embla) {
       embla.reInit();
     }
-  }, [lightboxSidebarShow, embla]);
+  }, [showSidebar, immersive, embla]);
 
   const handleDragStart = event => {
     event.preventDefault();
   };
 
   return (
-    <Modal.Root opened onClose={handleClose} fullScreen>
+    <Modal.Root opened onClose={handleModalClose} fullScreen>
       <Modal.Overlay blur={5} backgroundOpacity={0.8} />
       <Modal.Content style={{ background: "transparent" }}>
         <Modal.Body
-          ref={contentRef}
           style={{
             width: `100vw`,
-            height: "100vh",
+            height: VIEWPORT_HEIGHT,
             display: "flex",
             alignItems: "stretch",
             padding: 0,
@@ -414,9 +429,9 @@ export function ContentViewer({
           }}
         >
           <Stack
-            w={lightboxSidebarShow ? { base: "100%", md: "calc(100vw - 400px)" } : "100%"}
+            w={showSidebar ? { base: "100%", md: "calc(100vw - 400px)" } : "100%"}
             style={{
-              padding: 16,
+              padding: immersive ? 0 : 16,
               gap: 0,
               position: "relative", // For the thumbnail navigation
               height: "100%",
@@ -425,34 +440,48 @@ export function ContentViewer({
             {/* Preload images */}
             <ImagePreloader prevSrc={prevSrcHash} mainSrc={mainSrcHash} nextSrc={nextSrcHash} />
 
-            {/* Top toolbar */}
-            <LightboxControls
-              isPhotoDetailsLoading={isPhotoDetailsLoading}
-              photoDetail={photoDetails}
-              lightboxSidebarShow={lightboxSidebarShow}
-              setLightBoxSidebarShow={setLightBoxSidebarShow}
-              isPublic={isPublic}
-              enableZoom={enableZoom}
-              type={type}
-              isZoomed={isZoomed}
-              toggleZoom={toggleZoom}
-              onCloseRequest={handleClose}
-              onRotate={handleRotate}
-              playing={playing}
-              setPlaying={setPlaying}
-              isFullscreen={isFullscreen}
-              toggleFullscreen={toggleFullscreen}
-              isSlideshowActive={isSlideshowActive}
-              toggleSlideshow={toggleSlideshow}
-              slideshowInterval={slideshowInterval}
-              setSlideshowInterval={setLocalSlideshowInterval}
-              slideshowProgress={slideshowProgress}
-              hasOcrText={hasOcrText}
-              showOcrText={showOcrText}
-              toggleOcrText={toggleOcrText}
-              onCopyToClipboard={canCopyPhoto ? handleCopyPhoto : undefined}
-              isCopyingToClipboard={isCopyingToClipboard}
-            />
+            {immersive ? (
+              <ActionIcon
+                variant="filled"
+                color="dark"
+                radius="xl"
+                size="lg"
+                onClick={exitFullscreen}
+                aria-label={t("lightbox.controls.exitfullscreen")}
+                style={{ position: "absolute", top: 12, right: 12, zIndex: 10, opacity: 0.7 }}
+              >
+                <Minimize size={18} />
+              </ActionIcon>
+            ) : (
+              /* Top toolbar */
+              <LightboxControls
+                isPhotoDetailsLoading={isPhotoDetailsLoading}
+                photoDetail={photoDetails}
+                lightboxSidebarShow={lightboxSidebarShow}
+                setLightBoxSidebarShow={setLightBoxSidebarShow}
+                isPublic={isPublic}
+                enableZoom={enableZoom}
+                type={type}
+                isZoomed={isZoomed}
+                toggleZoom={toggleZoom}
+                onCloseRequest={handleClose}
+                onRotate={handleRotate}
+                playing={playing}
+                setPlaying={setPlaying}
+                isFullscreen={isFullscreen}
+                toggleFullscreen={toggleFullscreen}
+                isSlideshowActive={isSlideshowActive}
+                toggleSlideshow={toggleSlideshow}
+                slideshowInterval={slideshowInterval}
+                setSlideshowInterval={setLocalSlideshowInterval}
+                slideshowProgress={slideshowProgress}
+                hasOcrText={hasOcrText}
+                showOcrText={showOcrText}
+                toggleOcrText={toggleOcrText}
+                onCopyToClipboard={canCopyPhoto ? handleCopyPhoto : undefined}
+                isCopyingToClipboard={isCopyingToClipboard}
+              />
+            )}
 
             {/* Main photo/video with swipe navigation */}
             <div
@@ -556,20 +585,22 @@ export function ContentViewer({
             </div>
 
             {/* Bottom preview thumbnails */}
-            <ThumbnailNavigation
-              prevSrc={prevSrc}
-              prevSrcHash={prevSrcHash}
-              mainSrc={mainSrc}
-              mainSrcHash={mainSrcHash}
-              nextSrc={nextSrc}
-              nextSrcHash={nextSrcHash}
-              onMovePrevRequest={onMovePrevRequest}
-              onMoveNextRequest={onMoveNextRequest}
-              isPublic={isPublic}
-            />
+            {!immersive && (
+              <ThumbnailNavigation
+                prevSrc={prevSrc}
+                prevSrcHash={prevSrcHash}
+                mainSrc={mainSrc}
+                mainSrcHash={mainSrcHash}
+                nextSrc={nextSrc}
+                nextSrcHash={nextSrcHash}
+                onMovePrevRequest={onMovePrevRequest}
+                onMoveNextRequest={onMoveNextRequest}
+                isPublic={isPublic}
+              />
+            )}
           </Stack>
 
-          {lightboxSidebarShow && (
+          {showSidebar && (
             <Sidebar
               id={mainSrcHash}
               closeSidepanel={() => setLightBoxSidebarShow(!lightboxSidebarShow)}
