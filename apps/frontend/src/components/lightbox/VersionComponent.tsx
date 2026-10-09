@@ -37,6 +37,10 @@ function PhotoInfoSection({
   const fileVariants = photoDetail.file_variants || [];
   const nonMainVariants = fileVariants.filter(v => !v.is_main);
   const hasVariants = nonMainVariants.length > 0;
+  const fileName =
+    photoDetail.image_path && photoDetail.image_path.length > 0
+      ? photoDetail.image_path[0].substring(photoDetail.image_path[0].lastIndexOf("/") + 1)
+      : "Unknown filename";
 
   return (
     <Stack gap="xs">
@@ -45,10 +49,9 @@ function PhotoInfoSection({
           <Photo />
           <div>
             <Anchor href={`${serverAddress}/media/photos/${photoDetail.image_hash}`} target="_blank">
-              <Text fw={800} lineClamp={1} style={{ maxWidth: 225 }}>
-                {photoDetail.image_path && photoDetail.image_path.length > 0
-                  ? photoDetail.image_path[0].substring(photoDetail.image_path[0].lastIndexOf("/") + 1)
-                  : "Unknown filename"}
+              {/* Clamped to one line; the tooltip shows the whole name. */}
+              <Text fw={800} lineClamp={1} style={{ maxWidth: 225 }} title={fileName}>
+                {fileName}
               </Text>
             </Anchor>
             <Group gap="xs">
@@ -86,13 +89,20 @@ function PhotoInfoSection({
           <Stack gap={4} ml="xl" mt="xs">
             {nonMainVariants.map(variant => {
               const { color, label } = getVariantBadgeProps(variant);
+              const variantName = variant.filename || variant.path.split("/").pop();
               return (
                 <Group key={variant.hash} gap="xs">
                   <Badge size="xs" color={color} variant="filled">
                     {label}
                   </Badge>
-                  <Anchor href={`${serverAddress}/media/photos/${variant.hash}`} target="_blank" size="xs" c="dimmed">
-                    {variant.filename || variant.path.split("/").pop()}
+                  <Anchor
+                    href={`${serverAddress}/media/photos/${variant.hash}`}
+                    target="_blank"
+                    size="xs"
+                    c="dimmed"
+                    title={variantName}
+                  >
+                    {variantName}
                   </Anchor>
                 </Group>
               );
