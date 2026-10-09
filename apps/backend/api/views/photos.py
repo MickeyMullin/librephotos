@@ -2,6 +2,7 @@ import logging
 import uuid
 from collections import defaultdict
 
+from constance import config as site_config
 from django.conf import settings
 from django.db.models import Count, Prefetch, Q
 from django.utils import timezone
@@ -866,6 +867,44 @@ class SavePhotoCaption(APIView):
         caption_instance, created = PhotoCaption.objects.get_or_create(photo=photo)
         res = caption_instance.save_user_caption(caption)
         return Response({"status": res})
+
+
+class DismissAutoTag(APIView):
+    """Dismiss one auto tag from a photo as wrong, or restore it.
+
+    Body: ``photo`` (id or image hash), ``tag``, and ``dismissed`` (default
+    true; false restores a tag dismissed before, the toast's Undo). Owner-only.
+    """
+
+    permission_classes = (IsOwnerOrReadOnly,)
+
+    def post(self, request, format=None):
+        lookup = str(request.data.get("photo") or "")
+        tag = request.data.get("tag")
+        if not lookup or not isinstance(tag, str) or not tag.strip():
+            return Response(
+                {"status": False, "message": "photo and tag are required"},
+                status=400,
+            )
+        photo = (
+            Photo.objects.owned_by(request.user)
+            .filter(**_get_photo_filter_kwargs(lookup))
+            .first()
+        )
+        if photo is None:
+            return Response(
+                {"status": False, "message": "photo not found"},
+                status=404,
+            )
+
+        caption_instance, _ = PhotoCaption.objects.get_or_create(photo=photo)
+        if request.data.get("dismissed", True) is False:
+            caption_instance.restore_auto_tag(tag, site_config.TAGGING_MODEL)
+        else:
+            caption_instance.dismiss_auto_tag(tag)
+        return Response(
+            {"status": True, "captions_json": caption_instance.captions_json}
+        )
 
 
 class DeletePhotos(APIView):

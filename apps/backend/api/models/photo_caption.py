@@ -18,6 +18,22 @@ def tag_thing_type(tagging_model):
     return f"{tagging_model}_tag"
 
 
+# Key in captions_json listing the auto tags the user dismissed as wrong for
+# this photo. Kept outside every model's own entry, so it survives the entry
+# being replaced (a re-tag, a replaced file) and applies whichever tagging
+# model is active: a label that is wrong for a photo is wrong for all of them.
+DISMISSED_TAGS_KEY = "dismissed_tags"
+
+
+def _model_tag_entries(captions):
+    """The (tagging model, entry) pairs of a captions_json: ``{"tags": [...]}``."""
+    return [
+        (key, value)
+        for key, value in (captions or {}).items()
+        if isinstance(value, dict) and isinstance(value.get("tags"), list)
+    ]
+
+
 class PhotoCaption(models.Model):
     """Model for handling image captions and related functionality"""
 
@@ -306,7 +322,18 @@ class PhotoCaption(models.Model):
             if self.captions_json is None:
                 self.captions_json = {}
 
-            # Store under the model-specific key
+            # Store under the model-specific key, without the tags the user
+            # already dismissed for this photo.
+            dismissed = set(self.captions_json.get(DISMISSED_TAGS_KEY) or [])
+            if (
+                dismissed
+                and isinstance(tags_result, dict)
+                and isinstance(tags_result.get("tags"), list)
+            ):
+                tags_result = {
+                    **tags_result,
+                    "tags": [t for t in tags_result["tags"] if t not in dismissed],
+                }
             self.captions_json[tagging_model] = tags_result
             self.recreate_search_captions()
             self._update_tag_album_things(tags_result, tagging_model)
@@ -328,6 +355,53 @@ class PhotoCaption(models.Model):
 
         self._detach_photo_from_album_things([thing_type])
         self._attach_photo_to_album_things(tags, thing_type)
+
+    def dismiss_auto_tag(self, tag):
+        """Drop ``tag`` from this photo's auto tags, and keep it dropped.
+
+        It leaves every tagging model's list, its thing album and the search
+        captions, and is remembered so a later run of the tagger does not put
+        it back.
+        """
+        captions = dict(self.captions_json or {})
+        dismissed = list(captions.get(DISMISSED_TAGS_KEY) or [])
+        if tag not in dismissed:
+            dismissed.append(tag)
+        captions[DISMISSED_TAGS_KEY] = dismissed
+
+        for model, entry in _model_tag_entries(captions):
+            if tag in entry["tags"]:
+                captions[model] = {
+                    **entry,
+                    "tags": [t for t in entry["tags"] if t != tag],
+                }
+            for album_thing in self._photo_album_things([tag_thing_type(model)]):
+                if album_thing.title == tag:
+                    album_thing.photos.remove(self.photo)
+                    album_thing.save()
+
+        self.captions_json = captions
+        self.save()
+        self.recreate_search_captions()
+
+    def restore_auto_tag(self, tag, tagging_model):
+        """Undo ``dismiss_auto_tag``: the active model's list gets ``tag`` back."""
+        captions = dict(self.captions_json or {})
+        dismissed = [t for t in captions.get(DISMISSED_TAGS_KEY) or [] if t != tag]
+        if dismissed:
+            captions[DISMISSED_TAGS_KEY] = dismissed
+        else:
+            captions.pop(DISMISSED_TAGS_KEY, None)
+
+        entry = captions.get(tagging_model)
+        if isinstance(entry, dict) and isinstance(entry.get("tags"), list):
+            if tag not in entry["tags"]:
+                captions[tagging_model] = {**entry, "tags": [*entry["tags"], tag]}
+            self._attach_photo_to_album_things([tag], tag_thing_type(tagging_model))
+
+        self.captions_json = captions
+        self.save()
+        self.recreate_search_captions()
 
     # Backward-compatible alias
     def generate_places365_captions(self, commit=True):

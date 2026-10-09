@@ -655,6 +655,11 @@
       "uploading": "Uploading",
       "action": "Replace",
       "failed": "The photo could not be replaced."
+    },
+    "autotag": {
+      "dismiss": "Dismiss {{tag}}: it is wrong for this photo",
+      "dismissed": "{{tag}} was dismissed from this photo.",
+      "failed": "The tag could not be changed."
     }
   },
   "exif": {

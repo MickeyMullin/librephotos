@@ -1,8 +1,7 @@
-import { ActionIcon, Badge, Group, Stack, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Group, Stack, Title, Tooltip } from "@mantine/core";
 import { RichTextEditor } from "@mantine/tiptap";
 import "@mantine/tiptap/styles.css";
-import { IconCheck, IconEdit, IconX, IconNote as Note, IconTags as Tags, IconWand as Wand } from "@tabler/icons-react";
-import { useNavigate } from "@tanstack/react-router";
+import { IconCheck, IconEdit, IconX, IconNote as Note, IconWand as Wand } from "@tabler/icons-react";
 import Document from "@tiptap/extension-document";
 import Mention from "@tiptap/extension-mention";
 import Paragraph from "@tiptap/extension-paragraph";
@@ -16,6 +15,7 @@ import type { Photo as PhotoType } from "../../api_client/photos/types";
 import { useGetSettingsQuery } from "../../api_client/settings/hooks";
 import { fuzzyMatch } from "../../util/util";
 import { AISuggestionButton } from "./AISuggestionButton";
+import { AutoTagsSection } from "./AutoTagsSection";
 import "./Hashtag.css";
 import suggestion from "./Suggestion";
 
@@ -29,7 +29,6 @@ export function Description(props: Props) {
   const { data: thingAlbums } = useFetchThingsAlbumsQuery();
   const { data: siteSettings } = useGetSettingsQuery();
   const taggingModel = siteSettings?.tagging_model ?? "mobileclip_s2";
-  const navigate = useNavigate();
 
   const { photoDetail, isPublic } = props;
   // Every tagging model stores { tags: string[] } under its own key.
@@ -178,28 +177,10 @@ export function Description(props: Props) {
             </Tooltip>
           </Group>
         )}
+        {/* The tagging model's own output, not the user's tags -- both used
+            to render as "Tags" in the same sidebar. */}
         {autoTags && autoTags.length > 0 && (
-          <Stack>
-            <Group>
-              <Tags />
-              {/* The tagging model's own output, not the user's tags -- both
-                  used to render as "Tags" in the same sidebar. */}
-              <Title order={4}>{t("lightbox.sidebar.autotags")}</Title>
-            </Group>
-            <Group>
-              {autoTags.map((tag: string) => (
-                <Badge
-                  key={`lightbox_autotag_${photoDetail.image_hash}_${tag}`}
-                  color="green"
-                  onClick={() => {
-                    navigate({ to: `/search/${tag}` });
-                  }}
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </Group>
-          </Stack>
+          <AutoTagsSection photoDetail={photoDetail} autoTags={autoTags} isPublic={isPublic} />
         )}
       </Stack>
     </Stack>

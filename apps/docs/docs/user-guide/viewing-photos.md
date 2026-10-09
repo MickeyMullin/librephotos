@@ -170,7 +170,8 @@ Shows faces detected in the photo. You can:
 
 The AI-generated or manually entered caption for the photo. You can:
 
-- View auto-generated tags from the active tagging model (MobileCLIP-S2 or SigLIP 2), displayed as green badges under **Tags**; click one to search for it
+- View auto-generated tags from the active tagging model (MobileCLIP-S2 or SigLIP 2), displayed as green badges under **Auto tags**; click one to search for it
+- Dismiss an auto tag that is wrong with the **x** on its badge (your own photos only). It disappears from the photo, its thing album and search, and the tagging model will not add it to that photo again, even after re-tagging or switching models. The notification has an **Undo** button. Dismissing auto tags is not in a release yet; it ships with the first release after 1.2.1.
 - Edit the caption manually — type `#` to get autocomplete suggestions for thing album tags
 - Generate a new AI caption using the suggestion button
 - Use the **AI suggestion button** to quickly fill in a machine-generated caption
@@ -181,7 +182,7 @@ Tags from each model are stored independently, but the lightbox only shows tags 
 
 Your own tags for the photo, shown as teal badges. This section always appears in the sidebar when you are signed in, showing **No tags** when none are set. Click the pencil button to open an editor where you can add or remove tags — separate entries with a comma, and existing tags are offered as autocomplete suggestions, the ones beginning with what you typed first — then use the check to save or the X to cancel. Click a tag badge to open that tag's album.
 
-These are not the same as the **Auto tags** list SigLIP 2 adds under the caption: those come from the tagging model and are not editable here.
+These are not the same as the **Auto tags** list the tagging model adds under the caption: those cannot be edited here, but a wrong one can be dismissed (see [Caption](#caption)). The photo's own page (`/photo/<id>`) shows and edits tags the same way.
 
 To tag many photos in one go, select them in the grid and press **`t`** instead — see [Tagging photos](./albums.md#tagging-photos).
 
