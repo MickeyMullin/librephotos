@@ -17,6 +17,7 @@ from allauth.socialaccount.providers.openid_connect.views import (
     OpenIDConnectOAuth2Adapter,
 )
 from constance import config as site_config
+from django.conf import settings
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.decorators import login_not_required
 from django.http import Http404, HttpResponseRedirect
@@ -111,8 +112,12 @@ def _set_auth_cookies(response, access, refresh):
     # Mirror CustomTokenObtainPairView: the SPA reads these cookies (via
     # react-cookie) to boot already authenticated. Not HttpOnly, matching the
     # existing password-login behaviour so the client can read them.
-    response.set_cookie("access", access)
-    response.set_cookie("refresh", refresh)
+    # Kept as long as the login lasts, not just the browser session: phone
+    # browsers end the session whenever the system suspends them. The SPA's
+    # own setAuthCookie does the same for the cookies it writes.
+    max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
+    response.set_cookie("access", access, max_age=max_age)
+    response.set_cookie("refresh", refresh, max_age=max_age)
     response.set_cookie("jwt", access)
     response["Access-Control-Allow-Credentials"] = "true"
     return response

@@ -19,7 +19,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.messages.middleware import MessageMiddleware
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.contrib.sites.models import Site
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -384,3 +384,20 @@ class AllauthSurfaceTest(TestCase):
             "/api/accounts/login/", {"login": "alice", "password": "hunter2"}
         )
         self.assertEqual(resp.status_code, 403)
+
+
+class SsoAuthCookiesOutliveTheBrowserSessionTest(SimpleTestCase):
+    """A phone browser ends its session whenever it is suspended; the login
+    cookies must not go with it."""
+
+    def test_access_and_refresh_cookies_last_as_long_as_the_login(self):
+        from django.conf import settings
+        from django.http import HttpResponse
+
+        from api.views.sso import _set_auth_cookies
+
+        response = _set_auth_cookies(HttpResponse(), "a", "r")
+
+        lifetime = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
+        self.assertEqual(response.cookies["access"]["max-age"], lifetime)
+        self.assertEqual(response.cookies["refresh"]["max-age"], lifetime)

@@ -9,7 +9,7 @@
  * sequence is replayed here page by page.
  */
 import { Cookies } from "react-cookie";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearAuthCookies, setAuthCookie } from "./authCookies";
 
 function visit(path: string) {
@@ -109,5 +109,36 @@ describe("auth cookies", () => {
     new Cookies().remove("access");
 
     expect(accessCookies()).toEqual(["access=from-login"]);
+  });
+});
+
+// A JWT whose payload carries ``exp``; the signature is never checked here.
+function tokenExpiringAt(exp: number) {
+  const encode = (value: object) => btoa(JSON.stringify(value)).replace(/=+$/, "");
+  return `${encode({ alg: "none" })}.${encode({ exp })}.sig`;
+}
+
+describe("auth cookie lifetime", () => {
+  // A session cookie is gone whenever a phone browser is suspended, which
+  // signed the user out on every visit.
+  it("keeps both cookies until the refresh token expires", () => {
+    const set = vi.spyOn(Cookies.prototype, "set");
+    const exp = Math.floor(Date.now() / 1000) + 7 * 24 * 3600;
+
+    setAuthCookie("refresh", tokenExpiringAt(exp));
+    setAuthCookie("access", tokenExpiringAt(exp - 6 * 24 * 3600));
+
+    const expiry = (name: string) => set.mock.calls.find(([cookie]) => cookie === name)?.[2]?.expires;
+    expect(expiry("refresh")).toEqual(new Date(exp * 1000));
+    // The access token's own expiry is minutes away; the cookie must outlive it.
+    expect(expiry("access")).toEqual(new Date(exp * 1000));
+    set.mockRestore();
+  });
+
+  it("falls back to a session cookie when the token cannot be read", () => {
+    const set = vi.spyOn(Cookies.prototype, "set");
+    setAuthCookie("refresh", "not-a-jwt");
+    expect(set.mock.calls[0][2]).toEqual({ path: "/" });
+    set.mockRestore();
   });
 });

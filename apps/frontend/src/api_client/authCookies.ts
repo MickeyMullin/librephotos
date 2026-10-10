@@ -1,3 +1,4 @@
+import { jwtDecode } from "jwt-decode";
 import { Cookies } from "react-cookie";
 
 /**
@@ -39,6 +40,34 @@ function visibleCookieFolders() {
   return folders;
 }
 
+/**
+ * When the login stops being renewable: the expiry of the refresh token,
+ * ``refreshToken`` or else the one already stored. Undefined when there is
+ * none or it cannot be read.
+ */
+function loginExpiry(refreshToken?: string): Date | undefined {
+  const token: string | undefined = refreshToken ?? new Cookies().get("refresh");
+  if (!token) return undefined;
+  try {
+    const { exp } = jwtDecode<{ exp?: number }>(token);
+    return exp ? new Date(exp * 1000) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Store a token, kept until the login it belongs to expires.
+ *
+ * A cookie without an expiry is a session cookie, and phone browsers end the
+ * session whenever the system suspends or closes them, which on iOS is all the
+ * time: the user had to sign in again on every visit. Both cookies therefore
+ * live as long as the refresh token. The access cookie too, though its token
+ * lasts only minutes: its presence is what tells the app it is signed in (the
+ * token itself is refreshed on the first 401), so it must not vanish first.
+ * Set the refresh cookie before the access one, so the access cookie gets the
+ * new login's expiry.
+ */
 export function setAuthCookie(name: "access" | "refresh", value: string) {
   const cookies = new Cookies();
   // A copy an earlier version scoped to a folder is listed before the `/` one
@@ -47,7 +76,8 @@ export function setAuthCookie(name: "access" | "refresh", value: string) {
   for (const folder of visibleCookieFolders().slice(1)) {
     cookies.remove(name, { path: folder });
   }
-  cookies.set(name, value, AUTH_COOKIE_OPTIONS);
+  const expires = loginExpiry(name === "refresh" ? value : undefined);
+  cookies.set(name, value, expires ? { ...AUTH_COOKIE_OPTIONS, expires } : AUTH_COOKIE_OPTIONS);
 }
 
 export function clearAuthCookies() {
