@@ -177,6 +177,12 @@ class Duplicate(models.Model):
             kept_photo: The Photo instance to keep
             trash_others: Whether to move other photos to trash
         """
+        # What the user attached to the other copies goes to the one that
+        # stays, before they are trashed.
+        from api.duplicate_merge import merge_into_kept
+
+        merge_into_kept(kept_photo, list(self.photos.exclude(pk=kept_photo.pk)))
+
         # Set the kept photo
         self.kept_photo = kept_photo
         self.review_status = self.ReviewStatus.RESOLVED

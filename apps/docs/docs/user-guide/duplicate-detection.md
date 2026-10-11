@@ -90,6 +90,17 @@ Click on a duplicate group to open the review modal:
 4. Click **"Keep Selected & Trash Others"** — the other photos are moved to trash
 5. The group status changes to **Resolved**
 
+The photo you keep takes over what you had given the others, so nothing you organized is lost with them:
+
+- **Tags**: all of them.
+- **Albums**: it joins every one of your albums another copy was in, locked albums included, so the album keeps the picture.
+- **Rating**: the highest of the copies, so a favorite stays a favorite.
+- **Caption**: its own, followed by each different caption of the others.
+- **Dismissed auto tags**: stay dismissed.
+- **Sharing**: it is shared with everyone a copy was shared with, and public if a copy was.
+
+This only ever adds to the kept photo, and **Revert & Restore Photos** does not take the additions away again. What the files say about themselves (date, place, camera) and recognized faces stay as they are on the kept photo. Carrying these over is not in a release yet; it ships with the first release after 1.2.1.
+
 #### Other Actions
 
 - **"Not a Duplicate"** — Dismiss the group if the photos aren't actually duplicates. The group's status changes to **Dismissed** and its photos are unlinked from the group. Because the page only lists groups that still contain two or more photos, a dismissed group then disappears from view entirely — including from the **Dismissed** filter — even though it is still counted in the **Dismissed (N)** tab. This can't be undone from the interface.

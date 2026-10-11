@@ -84,11 +84,12 @@ export const useResolveDuplicateMutation = () => {
       const data: ResolveDuplicateRequest = { keep_photo_hash, trash_others };
       return fetchClient.post<ResolveDuplicateResponse>(`/duplicates/${id}/resolve`, data);
     },
-    onSuccess: (_, { id }) => {
-      // Invalidate the specific duplicate and the list
-      queryClient.invalidateQueries({ queryKey: DuplicatesQueryKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: DuplicatesQueryKeys.all });
-      queryClient.invalidateQueries({ queryKey: DuplicatesQueryKeys.stats() });
+    onSuccess: () => {
+      // Not just the duplicates: the other copies went to the trash and the
+      // kept one took over their tags, albums, rating, caption and shares, so
+      // timelines, tags, albums and the photo's details all changed. Only what
+      // is on screen refetches; the rest is just marked stale.
+      queryClient.invalidateQueries();
     },
   });
 };
@@ -118,11 +119,9 @@ export const useRevertDuplicateMutation = () => {
       const id = String(duplicateId);
       return fetchClient.post<{ status: string; restored_count: number }>(`/duplicates/${id}/revert`, {});
     },
-    onSuccess: (_, duplicateId) => {
-      const id = String(duplicateId);
-      queryClient.invalidateQueries({ queryKey: DuplicatesQueryKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: DuplicatesQueryKeys.all });
-      queryClient.invalidateQueries({ queryKey: DuplicatesQueryKeys.stats() });
+    onSuccess: () => {
+      // The trashed copies come back to every timeline and album.
+      queryClient.invalidateQueries();
     },
   });
 };
