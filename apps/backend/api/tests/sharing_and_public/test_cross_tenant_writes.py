@@ -257,6 +257,11 @@ class CrossTenantWriteTest(TestCase):
             ),
             (
                 "post",
+                "/api/photosedit/autotag",
+                {"photo": self.v_pub.image_hash, "tag": "pwned"},
+            ),
+            (
+                "post",
                 "/api/photosedit/rotate",
                 {"image_hash": self.v_pub.image_hash, "angle": 90},
             ),
