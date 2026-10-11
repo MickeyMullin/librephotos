@@ -58,15 +58,19 @@ export function Lightbox(props: ExtendedLightBoxProps) {
   const currentImageHash = getImageHashForId(lightboxImageId) || lightboxImageId;
   const { data: photoDetails } = useFetchPhotoDetailsQuery(currentImageHash, isPublic);
 
-  // Initialize and handle navigation context
+  // Follow the parent when it selects another image -- and only then. This
+  // used to reset whenever the shown image differed from `selectedImage`, so
+  // every move was undone at once unless the parent echoed it back through
+  // onImageChange; on the Duplicates page, which does not, the arrows and
+  // thumbnails did nothing.
+  const previousSelectedImage = usePrevious(selectedImage);
   useEffect(() => {
-    if (selectedImage !== lightboxImageId) {
-      setLightboxImageId(selectedImage);
-      // Reset to normal navigation when a new image is selected
-      usingStableNavigation.current = false;
-      stableNavigationSnapshot.current = [];
-    }
-  }, [selectedImage, idx2hash, lightboxImageId]);
+    if (previousSelectedImage === undefined || selectedImage === previousSelectedImage) return;
+    setLightboxImageId(selectedImage);
+    // Reset to normal navigation when a new image is selected
+    usingStableNavigation.current = false;
+    stableNavigationSnapshot.current = [];
+  }, [selectedImage, previousSelectedImage]);
 
   // Detect if current image was deleted and switch to stable navigation
   useEffect(() => {

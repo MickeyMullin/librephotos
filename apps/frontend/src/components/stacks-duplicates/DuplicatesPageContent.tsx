@@ -241,7 +241,8 @@ function DuplicateModal({
 }) {
   const { t } = useTranslation();
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [lightboxImageHash, setLightboxImageHash] = useState<string | null>(null);
+  // The photo's id, which is what idx2hash below is keyed on.
+  const [lightboxImageId, setLightboxImageId] = useState<string | null>(null);
   const [lightboxOpened, { open: openLightbox, close: closeLightbox }] = useDisclosure(false);
 
   const { data: duplicate, isLoading } = useDuplicateQuery(duplicateId);
@@ -260,7 +261,7 @@ function DuplicateModal({
   }, [duplicate?.photos]);
 
   const handleViewFull = (photo: DuplicatePhoto) => {
-    setLightboxImageHash(photo.image_hash);
+    setLightboxImageId(photo.id);
     openLightbox();
   };
 
@@ -333,13 +334,14 @@ function DuplicateModal({
 
   return (
     <>
-      {lightboxOpened && lightboxImageHash && (
+      {lightboxOpened && lightboxImageId && (
         <Lightbox
           isPublic={false}
           idx2hash={idx2hash}
-          selectedImage={lightboxImageHash}
+          selectedImage={lightboxImageId}
           onCloseRequest={closeLightbox}
           onChangedIndex={() => {}}
+          onImageChange={setLightboxImageId}
         />
       )}
       <Modal
