@@ -99,3 +99,37 @@ describe("MediaDisplay video source", () => {
     expect(props.fallbackUrl).toBeUndefined();
   });
 });
+
+async function imageSource(photoDetails: object | null) {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  await act(async () => {
+    root.render(
+      <MediaDisplay
+        id="abc"
+        image_hash="abc"
+        isMainContent
+        type="photo"
+        faceLocation={null as never}
+        handleDragStart={() => {}}
+        photoDetails={photoDetails}
+      />
+    );
+  });
+  const src = container.querySelector("img")?.getAttribute("src");
+  await act(async () => root.unmount());
+  return src;
+}
+
+describe("MediaDisplay animated images", () => {
+  // The big thumbnail is a still of the first frame; the original moves.
+  it("plays the original of a photo the server calls animated", async () => {
+    expect(await imageSource({ animated: true, image_path: ["/x/a.webp"] })).toBe("/media/photos/abc");
+    expect(await imageSource({ animated: false, image_path: ["/x/a.webp"] })).toBe("/media/thumbnails_big/abc");
+  });
+
+  it("still recognizes a GIF by name from a server that does not say", async () => {
+    expect(await imageSource({ image_path: ["/x/a.gif"] })).toBe("/media/photos/abc");
+    expect(await imageSource({ image_path: ["/x/a.webp"] })).toBe("/media/thumbnails_big/abc");
+  });
+});

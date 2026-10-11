@@ -1,17 +1,33 @@
 import { z } from "zod";
-import { Media, PigPhoto, SimpleUser, StackTypeEnum, UuidString } from "./common";
+import {
+  Media,
+  PigPhoto,
+  SimpleUser,
+  StackTypeEnum,
+  UuidString,
+} from "./common";
 
 export const People = z.object({
   name: z.string(),
   type: z.string(),
   probability: z.number(),
-  location: z.object({ top: z.number(), bottom: z.number(), left: z.number(), right: z.number() }),
+  location: z.object({
+    top: z.number(),
+    bottom: z.number(),
+    left: z.number(),
+    right: z.number(),
+  }),
   face_url: z.string(),
   face_id: z.number(),
 });
 export type People = z.infer<typeof People>;
 
-export const MetadataSourceEnum = z.enum(["embedded", "sidecar", "user_edit", "computed"]);
+export const MetadataSourceEnum = z.enum([
+  "embedded",
+  "sidecar",
+  "user_edit",
+  "computed",
+]);
 export type MetadataSourceEnum = z.infer<typeof MetadataSourceEnum>;
 
 export const PhotoMetadataSummary = z.object({
@@ -51,7 +67,13 @@ export type PhotoOcrData = z.infer<typeof PhotoOcrData>;
  * One stored file of a photo: the same capture moment as a different format
  * (RAW next to its JPEG, the video half of a Live Photo, an XMP sidecar).
  */
-export const FileVariantTypeEnum = z.enum(["image", "video", "raw", "metadata", "unknown"]);
+export const FileVariantTypeEnum = z.enum([
+  "image",
+  "video",
+  "raw",
+  "metadata",
+  "unknown",
+]);
 export type FileVariantTypeEnum = z.infer<typeof FileVariantTypeEnum>;
 
 export const FileVariant = z.object({
@@ -114,12 +136,18 @@ export const Photo = z.object({
   removed: z.boolean(),
   size: z.number(),
   shared_to: z.number().nullable().array(),
-  similar_photos: z.object({ image_hash: z.string(), type: z.nativeEnum(Media) }).array(),
+  similar_photos: z
+    .object({ image_hash: z.string(), type: z.nativeEnum(Media) })
+    .array(),
   video: z.boolean(),
   is_screenshot: z.boolean().optional().default(false),
   is_document: z.boolean().optional().default(false),
   // "user" once the owner set the category; rescans then leave it alone.
-  category_source: z.enum(["auto", "user"]).optional().default("auto").catch("auto"),
+  category_source: z
+    .enum(["auto", "user"])
+    .optional()
+    .default("auto")
+    .catch("auto"),
   owner: SimpleUser,
   shutter_speed: z.string().nullable(),
   height: z.number().nullable(),
@@ -131,7 +159,9 @@ export const Photo = z.object({
   subjectDistance: z.number().nullable(),
   digitalZoomRatio: z.number().nullable(),
   lens: z.string().nullable(),
-  embedded_media: z.object({ id: z.string(), type: z.nativeEnum(Media) }).array(),
+  embedded_media: z
+    .object({ id: z.string(), type: z.nativeEnum(Media) })
+    .array(),
   file_variants: FileVariant.array().nullable().optional(),
   stacks: PhotoStackDetail.array().nullable().optional(),
   metadata: PhotoMetadataSummary.nullable().optional(),
@@ -139,6 +169,9 @@ export const Photo = z.object({
   // What a video is, as HTMLMediaElement.canPlayType() takes it; null until
   // the scan has probed the video, and for anything that is not one.
   video_playback_type: z.string().nullable().optional(),
+  // An animated GIF or WebP: the lightbox plays the original, since the big
+  // thumbnail is a still of its first frame. Absent from older servers.
+  animated: z.boolean().optional(),
 });
 export type Photo = z.infer<typeof Photo>;
 
@@ -146,7 +179,9 @@ export const RecentlyAddedPhotosResponse = z.object({
   results: PigPhoto.array(),
   date: z.string(),
 });
-export type RecentlyAddedPhotosResponse = z.infer<typeof RecentlyAddedPhotosResponse>;
+export type RecentlyAddedPhotosResponse = z.infer<
+  typeof RecentlyAddedPhotosResponse
+>;
 
 /** GET /api/photos/notimestamp/: DRF page-number pagination, 100 per page. */
 export const PhotosWithoutTimestampResponse = z.object({
@@ -155,7 +190,9 @@ export const PhotosWithoutTimestampResponse = z.object({
   next: z.string().nullable(),
   previous: z.string().nullable(),
 });
-export type PhotosWithoutTimestampResponse = z.infer<typeof PhotosWithoutTimestampResponse>;
+export type PhotosWithoutTimestampResponse = z.infer<
+  typeof PhotosWithoutTimestampResponse
+>;
 
 /** Body describing a photoset for server-side "select all" bulk operations. */
 export const BulkPhotoQuery = z.object({

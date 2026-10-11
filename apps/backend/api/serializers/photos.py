@@ -16,6 +16,7 @@ from api.models.photo_metadata import PhotoMetadata
 from api.models.photo_ocr import PhotoOcr
 from api.serializers.photo_metadata import PhotoMetadataSummarySerializer
 from api.serializers.simple import SimpleUserSerializer
+from api.thumbnails import animation_frames
 
 logger = logging.getLogger(__name__)
 
@@ -366,6 +367,9 @@ class PhotoSerializer(serializers.ModelSerializer):
     # What the video is, in the form the browser's canPlayType() takes, so the
     # frontend asks for a conversion only when this browser cannot play it.
     video_playback_type = serializers.SerializerMethodField()
+    # An animated GIF or WebP: the lightbox plays the original, since the big
+    # thumbnail is a still of its first frame.
+    animated = serializers.SerializerMethodField()
 
     # Backwards-compatible fields from PhotoMetadata (for API compatibility)
     height = serializers.SerializerMethodField()
@@ -406,6 +410,7 @@ class PhotoSerializer(serializers.ModelSerializer):
             "shared_to",
             "similar_photos",
             "video",
+            "animated",
             # Media category, and whether the user set it ("user") or the
             # detector did ("auto"); the lightbox shows and changes it.
             "is_screenshot",
@@ -453,6 +458,14 @@ class PhotoSerializer(serializers.ModelSerializer):
 
     def get_video_playback_type(self, obj) -> str | None:
         return video_playback.playback_type(obj)
+
+    def get_animated(self, obj) -> bool:
+        main_file = obj.main_file
+        if obj.video or main_file is None or not main_file.path:
+            return False
+        if not main_file.path.lower().endswith((".gif", ".webp")):
+            return False
+        return animation_frames(main_file.path) > 1
 
     def get_height(self, obj) -> int:
         return self._get_metadata_field(obj, "height", default=0)

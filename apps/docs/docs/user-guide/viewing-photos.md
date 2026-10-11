@@ -68,6 +68,8 @@ Browse your photos by filesystem directory structure. The root view shows the su
 
 When you click on any photo in LibrePhotos, it opens in the photo viewer (also known as the lightbox). This provides a full-screen view of your photo with navigation controls and a details sidebar.
 
+Animated GIFs and WebPs move both in the grid and in the photo viewer, which plays the original file. Their grid thumbnails are animated, looping over the first 150 frames of a long animation to keep the grid light; animations you rotated in LibrePhotos show their first frame in the grid instead. Animations indexed before this arrived keep still thumbnails until they are rebuilt, which an administrator can do in one go with `python manage.py regenerate_animated_thumbnails` in the backend container (add `--dry-run` to only list them). This is not in a release yet; it ships with the first release after 1.2.1.
+
 ### Navigation
 
 - **Arrow keys** or **swipe** to navigate between photos

@@ -28,7 +28,7 @@ Very small thumbnails and not actually square. Can be static or animated. These 
 
 ### /square_thumbnails
 
-The thumbnails and not actually square. You see them in the overview, when you scroll through your timeline. Can be animated or static.
+The thumbnails and not actually square. You see them in the overview, when you scroll through your timeline. Can be animated or static: a video gets an MP4, an animated GIF or WebP an animated WebP.
 
 ### /thumbnails_big
 

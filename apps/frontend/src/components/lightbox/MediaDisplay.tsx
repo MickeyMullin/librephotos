@@ -84,7 +84,12 @@ export function MediaDisplay({
     height: imgRef.current?.naturalHeight ?? 810,
   };
 
-  const isGif = () => {
+  // The server says which photos are animated (GIF or WebP); an older one
+  // did not, and only GIFs were recognized, by extension.
+  const isAnimated = () => {
+    if (typeof photoDetails?.animated === "boolean") {
+      return photoDetails.animated;
+    }
     if (!photoDetails?.image_path || !Array.isArray(photoDetails.image_path)) {
       return false;
     }
@@ -130,12 +135,12 @@ export function MediaDisplay({
     );
   }
 
-  // For GIFs, use the original photo endpoint to get the animated file
+  // For animations, use the original photo endpoint to get the animated file
   // For regular photos, use the big thumbnail
   // Append a version param after rotation so the browser discards its cached copy
   const cacheBustingParam = imageCacheKey ? `?v=${imageCacheKey}` : "";
   const imageUrl =
-    isGif() && isMainContent
+    isAnimated() && isMainContent
       ? `${serverAddress}/media/photos/${mediaHash}${cacheBustingParam}`
       : `${serverAddress}/media/thumbnails_big/${mediaHash}${cacheBustingParam}`;
 

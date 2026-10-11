@@ -262,6 +262,64 @@ STATIC_THUMBNAIL_HEIGHTS = {
 }
 
 
+# An animated GIF or WebP gets animated (WebP) grid thumbnails, so it moves in
+# the grid as it does anywhere else; the lightbox plays the original. The big
+# thumbnail stays a still of the first frame: every ML service and OCR read it,
+# and OpenCV cannot decode an animated WebP.
+#
+# A grid thumbnail is a preview: it loops over at most this many frames from
+# the start, so a long animation costs a few megabytes on a grid of dozens
+# rather than tens, and its decode stays bounded.
+ANIMATED_PREVIEW_FRAMES = 150
+
+# Stills are encoded for the lightbox; an animation's frames multiply every
+# byte, and at grid size this is indistinguishable at a quarter of the size.
+ANIMATED_WEBP = {"Q": 70, "effort": 4, "keep": pyvips.enums.ForeignKeep.ICC}
+
+# Only these loaders mean animation by "several pages": a multi-page TIFF, a
+# PDF or a HEIC sequence is several pictures, not one that moves.
+_ANIMATED_LOADERS = ("gifload", "webpload")
+
+
+def animation_frames(path) -> int:
+    """How many frames the animation in ``path`` has; 1 for anything else."""
+    try:
+        head = pyvips.Image.new_from_file(f"{path}[revalidate]")
+        loader = head.get("vips-loader") if head.get_typeof("vips-loader") else ""
+        if not loader.startswith(_ANIMATED_LOADERS) or not head.get_typeof("n-pages"):
+            return 1
+        return max(1, int(head.get("n-pages")))
+    except pyvips.Error:
+        return 1
+
+
+def _animated_thumbnails(input_path, local_orientation) -> bool:
+    """Whether ``input_path`` gets animated grid thumbnails.
+
+    Not when the user rotated it in LibrePhotos: the frames are stacked into
+    one tall image, and rotating that would scramble them, so those keep the
+    rotated first frame.
+    """
+    if is_raw(input_path) or (local_orientation or 1) != 1:
+        return False
+    return animation_frames(input_path) > 1
+
+
+def _render_animated_thumbnail(input_path, output_height, complete_path):
+    # ``n`` loads that many frames from the start; thumbnail scales each one to
+    # the height (it knows the page height) and WebP keeps their delays and
+    # the loop.
+    frames = min(animation_frames(input_path), ANIMATED_PREVIEW_FRAMES)
+    image = pyvips.Image.thumbnail(
+        f"{input_path}[n={frames},revalidate]",
+        10000,
+        height=output_height,
+        size=pyvips.enums.Size.DOWN,
+    )
+    image.write_to_file(complete_path, **ANIMATED_WEBP)
+    return complete_path
+
+
 def create_static_thumbnails(input_path, hash, output_paths, local_orientation=1):
     """Write the static thumbnails in ``output_paths`` from a single decode.
 
@@ -269,9 +327,23 @@ def create_static_thumbnails(input_path, hash, output_paths, local_orientation=1
     done once per size. The big thumbnail is rendered as ``create_thumbnail``
     renders it; the smaller ones are resized from it (in memory, or from the
     file when only they are missing), which is what RAW files always did.
+
+    An animation is the exception for the grid sizes: they are rendered from
+    the original, every frame of it, while the big thumbnail stays a still.
     """
     big_path = _media_path("thumbnails_big", hash, ".webp")
     try:
+        if _animated_thumbnails(input_path, local_orientation):
+            for output_path in output_paths:
+                if output_path == "thumbnails_big":
+                    _render_big_thumbnail(input_path, big_path, local_orientation)
+                else:
+                    _render_animated_thumbnail(
+                        input_path,
+                        STATIC_THUMBNAIL_HEIGHTS[output_path],
+                        _media_path(output_path, hash, ".webp"),
+                    )
+            return
         big = None
         if "thumbnails_big" in output_paths:
             big = _render_big_thumbnail(input_path, big_path, local_orientation)
