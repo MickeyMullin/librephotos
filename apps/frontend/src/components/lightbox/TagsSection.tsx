@@ -48,16 +48,20 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
     const removed = tags.filter(tag => !wanted.includes(tag.name));
     const added = wanted.filter(name => !tags.some(tag => tag.name === name));
 
+    // Silent: the badges below change as the edit lands, which says it all,
+    // and a toast per tag stacked up on top of this very section.
     try {
-      await Promise.all(removed.map(tag => removePhotos({ id: tag.id, name: tag.name, photos: [photoDetail.id] })));
+      await Promise.all(
+        removed.map(tag => removePhotos({ id: tag.id, name: tag.name, photos: [photoDetail.id], silent: true }))
+      );
       await Promise.all(
         added.map(async name => {
           // The account may already own the tag through another photo, but
           // allTags only holds the first page - this is a shortcut past a
           // request, not the check. Creating a tag that exists returns it.
           const existing = allTags?.find(tag => tag.name === name);
-          const tag = existing ?? (await createTag({ name }));
-          await addPhotos({ id: tag.id, name, photos: [photoDetail.id] });
+          const tag = existing ?? (await createTag({ name, silent: true }));
+          await addPhotos({ id: tag.id, name, photos: [photoDetail.id], silent: true });
         })
       );
     } catch {

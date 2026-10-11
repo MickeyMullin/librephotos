@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useDismissAutoTagMutation } from "../../api_client/photos/hooks/useDismissAutoTagMutation";
 import type { Photo as PhotoType } from "../../api_client/photos/types";
 import { useAuth } from "../../hooks/useAuth";
+import { INTERACTIVE_TOAST_STYLE } from "../../service/notifications/interactive";
 
 type Props = Readonly<{
   photoDetail: PhotoType;
@@ -38,8 +39,9 @@ export function AutoTagsSection({ photoDetail, autoTags, isPublic }: Props) {
           showNotification({
             id: UNDO_NOTIFICATION_ID,
             color: "teal",
-            // Long enough to reach the Undo button; the app default is 3 s.
+            // Long enough to reach the Undo button; the app default is 2 s.
             autoClose: 10000,
+            style: INTERACTIVE_TOAST_STYLE,
             title: t("lightbox.sidebar.autotags"),
             message: (
               <Group justify="space-between" wrap="nowrap">

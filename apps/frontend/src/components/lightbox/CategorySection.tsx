@@ -18,6 +18,7 @@ import { useFetchPhotoTagsQuery } from "../../api_client/tags/hooks";
 import { useCurrentUserSelfDetailsQuery } from "../../api_client/user/hooks/useCurrentUserSelfDetailsQuery";
 import type { User } from "../../api_client/user/types";
 import { useAuth } from "../../hooks/useAuth";
+import { INTERACTIVE_TOAST_STYLE } from "../../service/notifications/interactive";
 import { savedTimelineFilter, timelineFilterShows } from "../photolist/timelineFilter";
 
 // What the control shows for one photo: the category, who set it, and the
@@ -140,8 +141,9 @@ export function CategorySection({ photoDetail }: Props) {
           showNotification({
             id: UNDO_NOTIFICATION_ID,
             color: "teal",
-            // Long enough to reach the Undo button; the app default is 3 s.
+            // Long enough to reach the Undo button; the app default is 2 s.
             autoClose: 10000,
+            style: INTERACTIVE_TOAST_STYLE,
             title: t("toasts.setcategorytitle"),
             message: (
               <Group justify="space-between" wrap="nowrap">

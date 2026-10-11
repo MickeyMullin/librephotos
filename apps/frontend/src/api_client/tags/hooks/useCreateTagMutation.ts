@@ -7,10 +7,10 @@ import { TagsQueryKeys } from "./useFetchTagsQuery";
 
 export const useCreateTagMutation = () =>
   useMutation({
-    mutationFn: async ({ name }: CreateTagParams) => {
+    mutationFn: async ({ name, silent }: CreateTagParams) => {
       const response = await fetchClient.post(`/tags/`, { name });
       const tag = parseWithNotification(Tag, response, "Failed to parse tag");
-      notification.createTag(name);
+      if (!silent) notification.createTag(name);
       return tag;
     },
     onSuccess: () => {

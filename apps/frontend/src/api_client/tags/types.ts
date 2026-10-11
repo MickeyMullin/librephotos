@@ -35,6 +35,8 @@ export const TagAlbumResponse = z.object({
 
 export type CreateTagParams = {
   name: string;
+  // No toast: the caller shows the result itself (the lightbox's tag badges).
+  silent?: boolean;
 };
 
 export type RenameTagParams = {
@@ -52,6 +54,8 @@ export type TagPhotosParams = {
   id: number;
   name: string;
   photos: string[];
+  // No toast: the caller shows the result itself (the lightbox's tag badges).
+  silent?: boolean;
 };
 
 export type MergeTagsParams = {

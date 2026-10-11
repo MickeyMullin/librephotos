@@ -8,9 +8,9 @@ import { TagsQueryKeys } from "./useFetchTagsQuery";
 
 export const useAddPhotosToTagMutation = () =>
   useMutation({
-    mutationFn: async ({ id, name, photos }: TagPhotosParams) => {
+    mutationFn: async ({ id, name, photos, silent }: TagPhotosParams) => {
       await fetchClient.post(`/tags/${id}/add/`, { photos });
-      notification.addPhotosToTag(name, photos.length);
+      if (!silent) notification.addPhotosToTag(name, photos.length);
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: [...TagsQueryKeys] });
@@ -21,9 +21,9 @@ export const useAddPhotosToTagMutation = () =>
 
 export const useRemovePhotosFromTagMutation = () =>
   useMutation({
-    mutationFn: async ({ id, name, photos }: TagPhotosParams) => {
+    mutationFn: async ({ id, name, photos, silent }: TagPhotosParams) => {
       await fetchClient.post(`/tags/${id}/remove/`, { photos });
-      notification.removePhotosFromTag(name, photos.length);
+      if (!silent) notification.removePhotosFromTag(name, photos.length);
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: [...TagsQueryKeys] });

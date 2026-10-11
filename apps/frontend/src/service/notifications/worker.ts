@@ -1,5 +1,6 @@
 import { showNotification } from "@mantine/notifications";
 import i18n from "../../i18n";
+import { INTERACTIVE_TOAST_STYLE } from "./interactive";
 
 function jobFinished(title: string, job: string) {
   showNotification({
@@ -22,6 +23,10 @@ function requestFailed(title: string, message: string) {
     message,
     title,
     color: "red",
+    // Longer than the 2 s of a confirmation, and closable: an error has to be
+    // read, and is rare enough not to get in the way.
+    autoClose: 6000,
+    style: INTERACTIVE_TOAST_STYLE,
   });
 }
 

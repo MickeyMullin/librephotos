@@ -1,10 +1,10 @@
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
-import { Notifications } from "@mantine/notifications";
 import "@mantine/notifications/styles.css";
 import "@mantine/spotlight/styles.css";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import React from "react";
 import "./App.css";
+import { AppNotifications } from "./components/notifications/AppNotifications";
 import { routeTree } from "./routeTree.gen";
 import "./i18n";
 
@@ -28,7 +28,7 @@ export function App() {
     <>
       <ColorSchemeScript defaultColorScheme="auto" />
       <MantineProvider defaultColorScheme="auto">
-        <Notifications autoClose={3000} zIndex={1001} />
+        <AppNotifications />
         <RouterProvider router={router} />
       </MantineProvider>
     </>
