@@ -1571,5 +1571,24 @@
       "action": "Show everything"
     },
     "savefailed": "Your default view could not be saved. Please try again."
+  },
+  "tagsearch": {
+    "title": "Search by tags",
+    "open": "Search by tags",
+    "combine": "Search with other tags",
+    "with": "Photos with these tags",
+    "without": "Without these tags",
+    "match": "Match",
+    "all": "All tags",
+    "any": "Any tag",
+    "notag": "No tag by that name",
+    "start": {
+      "title": "Pick tags to search for",
+      "description": "Choose one or more tags. With several, show photos that carry all of them or any of them, and leave out photos with tags you choose under Without."
+    },
+    "nomatch": {
+      "title": "No photos match",
+      "description": "No photo carries this combination of tags. Remove a tag, or switch to Any tag."
+    }
   }
 }

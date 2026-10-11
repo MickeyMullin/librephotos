@@ -81,24 +81,33 @@ export function DefaultHeader(props: Props) {
   const isScanView = () => location.pathname === "/";
 
   function getPhotoCounter() {
+    // The subheader stays while loading and when nothing is found: it can hold
+    // the very controls that change what is shown (the tag search's pickers,
+    // the timeline's filter summary).
     if (loading) {
       return (
-        <Text ta="left" c="dimmed">
-          {t("defaultheader.loading")}
-          <Loader size={20} />
-        </Text>
+        <div>
+          <Text ta="left" c="dimmed">
+            {t("defaultheader.loading")}
+            <Loader size={20} />
+          </Text>
+          {additionalSubHeader}
+        </div>
       );
     }
 
     if (numPhotosetItems < 1) {
       // Don't show "No images found" if an EmptyState will be displayed below
       if (hasEmptyState) {
-        return null;
+        return additionalSubHeader ?? null;
       }
       return (
-        <Text ta="left" c="dimmed">
-          {t("defaultheader.noimages")}
-        </Text>
+        <div>
+          <Text ta="left" c="dimmed">
+            {t("defaultheader.noimages")}
+          </Text>
+          {additionalSubHeader}
+        </div>
       );
     }
 

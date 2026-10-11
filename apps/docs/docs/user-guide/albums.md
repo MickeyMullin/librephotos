@@ -150,6 +150,20 @@ Every tag in the box is applied to every photo in the selection. Tagging is addi
 
 Open a photo and use the **Tags** section of the [sidebar](./viewing-photos.md) — the pencil button opens the same comma-separated editor, and here it both adds and removes: whatever you leave in the box is what the photo ends up with. Click a tag badge to jump to that tag's album.
 
+### Searching by tags
+
+:::note
+Searching by tags is not in a release yet; it ships with the first release after 1.2.1.
+:::
+
+To find photos by their tags, open **Tags → View all** and click **Search by tags**, or click the tags icon at the top of any tag's page to start from that tag.
+
+- **Photos with these tags**: pick one or more tags. Names that start with what you type are offered first.
+- **All tags / Any tag**: appears once two tags are picked. **All tags** shows photos that carry every one of them; **Any tag** shows photos that carry at least one.
+- **Without these tags**: leaves out photos that carry any of these. It also works on its own, for example to see every photo that is not tagged `reviewed`.
+
+Tags match exactly, unlike the [text search](./search.md), which also matches a word inside a longer tag name. The search is kept in the page address, so it survives a reload and can be bookmarked; it refers to tags by their id, so a bookmark keeps working after a tag is renamed. The **All / Photos / Videos** toggle narrows the results, and the photos can be selected and edited like any other album.
+
 ### Renaming, merging and deleting tags
 
 On the Albums page, open **Tags → View all**. The three-dot menu on any tag offers:

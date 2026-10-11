@@ -80,6 +80,8 @@ When you perform a search (either from the spotlight or the search bar), LibrePh
 
 Every word in your query must match, though not necessarily in the same field: searching `beach sunset` returns only photos where both `beach` and `sunset` appear somewhere in the indexed text (caption, person name, location, file path, camera, and so on). Commas separate words the same way spaces do. To search for an exact phrase, wrap it in quotes — `"golden gate bridge"` matches only photos containing that whole phrase.
 
+To find photos by your own tags, with exact matches and several tags at once (all of them, any of them, or without some), use [Searching by tags](./albums.md#searching-by-tags) instead.
+
 The search results header also has an **All / Photos / Videos** toggle in the top right for narrowing the results to only photos or only videos.
 
 Results are displayed grouped by date, similar to the main timeline view.

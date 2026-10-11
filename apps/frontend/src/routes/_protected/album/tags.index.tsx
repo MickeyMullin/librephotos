@@ -4,6 +4,7 @@ import {
   IconArrowMerge as ArrowMerge,
   IconDotsVertical as DotsVertical,
   IconEdit as Edit,
+  IconSearch as Search,
   IconTag as Tag,
   IconTrash as Trash,
 } from "@tabler/icons-react";
@@ -131,12 +132,19 @@ function AlbumTag() {
 
   return (
     <div>
-      <HeaderComponent
-        icon={<Tag size={50} />}
-        title={t("tags")}
-        fetching={isFetching}
-        subtitle={t("tagalbum.showingtags", { number: (tags && tags.length) || 0 })}
-      />
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <HeaderComponent
+          icon={<Tag size={50} />}
+          title={t("tags")}
+          fetching={isFetching}
+          subtitle={t("tagalbum.showingtags", { number: (tags && tags.length) || 0 })}
+        />
+        {hasTags && (
+          <Button component={Link} to="/album/tags/search" variant="light" leftSection={<Search size={16} />} m={10}>
+            {t("tagsearch.open")}
+          </Button>
+        )}
+      </Group>
       {!isFetching && !hasTags ? (
         <EmptyState
           icon={<Tag size={40} />}

@@ -6,3 +6,4 @@ export * from "./useDeleteTagMutation";
 export * from "./useTagPhotosMutations";
 export * from "./useTagPhotosByNameMutation";
 export * from "./useMergeTagsMutation";
+export * from "./useFetchTagSearchQuery";

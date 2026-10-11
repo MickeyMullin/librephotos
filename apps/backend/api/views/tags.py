@@ -14,6 +14,11 @@ from api.serializers.tag import (
     TagListSerializer,
     TagSerializer,
 )
+from api.serializers.photos import GroupedPhotosSerializer
+from api.serializers.PhotosGroupedByDate import (
+    filter_photos_by_media_type,
+    get_photos_ordered_by_date,
+)
 from api.views.albums import _with_photo_summary_relations
 from api.views.pagination import StandardResultsSetPagination
 from api.views.photo_filters import build_photo_queryset
@@ -23,6 +28,46 @@ from api.views.photos import _get_photo_filter_kwargs
 # batches instead of one statement over every row. Small selections still take
 # a single pass, so nothing changes for a handful of photos.
 PHOTO_LINK_BATCH_SIZE = 2000
+
+
+def _tag_ids(raw):
+    """The integer ids in a comma-separated query value; anything else is dropped."""
+    ids = []
+    for part in (raw or "").split(","):
+        part = part.strip()
+        if part.isdigit():
+            ids.append(int(part))
+    return list(dict.fromkeys(ids))
+
+
+def photos_with_tags(user, tag_ids, match="all", exclude_ids=()):
+    """``user``'s visible photos carrying ``tag_ids``, minus ``exclude_ids``.
+
+    ``match="all"`` wants every tag on the same photo; ``"any"`` wants at least
+    one. Only the user's own tags count. With ``all``, an id that is not one of
+    them (a deleted tag in a bookmarked search) matches nothing rather than
+    being dropped, which would quietly widen the search. No tags at all, and no
+    exclusions either, is an empty search, not the whole library.
+    """
+    wanted = list(Tag.objects.filter(owner=user, pk__in=tag_ids))
+    excluded = list(Tag.objects.filter(owner=user, pk__in=exclude_ids))
+    photos = Photo.visible.owned_by(user)
+
+    if wanted:
+        if match == "any":
+            photos = photos.filter(tags__in=wanted).distinct()
+        else:
+            if len(wanted) < len(set(tag_ids)):
+                photos = photos.none()
+            # One join per tag: each filter() call matches its own tag row.
+            for tag in wanted:
+                photos = photos.filter(tags=tag)
+    elif tag_ids or not excluded:
+        photos = photos.none()
+
+    if excluded:
+        photos = photos.exclude(tags__in=excluded)
+    return photos, wanted, excluded
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -181,6 +226,54 @@ class TagViewSet(viewsets.ModelViewSet):
     )
     def list(self, *args, **kwargs):
         return super().list(*args, **kwargs)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "tags",
+                OpenApiTypes.STR,
+                description="Comma-separated ids of the tags the photos carry.",
+            ),
+            OpenApiParameter("match", OpenApiTypes.STR, enum=["all", "any"]),
+            OpenApiParameter(
+                "exclude",
+                OpenApiTypes.STR,
+                description="Comma-separated ids of tags the photos must not carry.",
+            ),
+            OpenApiParameter("video", OpenApiTypes.BOOL),
+            OpenApiParameter("photo", OpenApiTypes.BOOL),
+        ],
+        description=(
+            "Search by tags: the requesting user's photos carrying all (or, with "
+            "match=any, any) of the given tags and none of the excluded ones, "
+            "grouped by date like a tag album."
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="photos")
+    def photos(self, request):
+        params = request.query_params
+        match = "any" if params.get("match") == "any" else "all"
+        photos, wanted, excluded = photos_with_tags(
+            request.user,
+            _tag_ids(params.get("tags")),
+            match,
+            _tag_ids(params.get("exclude")),
+        )
+        photos = filter_photos_by_media_type(
+            _with_photo_summary_relations(photos.order_by("-exif_timestamp")),
+            request,
+        )
+        grouped = get_photos_ordered_by_date(photos)
+        return Response(
+            {
+                "results": {
+                    "match": match,
+                    "tags": [{"id": tag.id, "name": tag.name} for tag in wanted],
+                    "excluded": [{"id": tag.id, "name": tag.name} for tag in excluded],
+                    "grouped_photos": GroupedPhotosSerializer(grouped, many=True).data,
+                }
+            }
+        )
 
     def retrieve(self, request, *args, **kwargs):
         serializer = GroupedTagPhotosSerializer(

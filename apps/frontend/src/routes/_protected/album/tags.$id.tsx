@@ -1,5 +1,6 @@
-import { IconTag as Tag } from "@tabler/icons-react";
-import { createFileRoute } from "@tanstack/react-router";
+import { ActionIcon, Tooltip } from "@mantine/core";
+import { IconTagsFilled as CombineTags, IconTag as Tag } from "@tabler/icons-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetchTagAlbumQuery } from "../../../api_client/tags/hooks";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/_protected/album/tags/$id")({
 
 function AlbumTagGallery() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { id: tagID } = Route.useParams();
   const mediaType = useMediaTypeFilter();
   const { data: tagAlbum, isLoading: fetchingTagAlbum } = useFetchTagAlbumQuery(tagID || "", mediaType);
@@ -42,6 +44,19 @@ function AlbumTagGallery() {
       idx2hash={tagAlbum ? tagAlbum.grouped_photos.flatMap(el => el.items) : []}
       mediaType={mediaType}
       emptyStateConfig={emptyStateConfig}
+      headerActions={
+        <Tooltip label={t("tagsearch.combine")} position="bottom">
+          <ActionIcon
+            onClick={() => navigate({ to: "/album/tags/search", search: { tags: tagID } })}
+            variant="subtle"
+            color="gray"
+            size="lg"
+            aria-label={t("tagsearch.combine")}
+          >
+            <CombineTags size={20} />
+          </ActionIcon>
+        </Tooltip>
+      }
       selectable
     />
   );
