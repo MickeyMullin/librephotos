@@ -1,6 +1,7 @@
-import { Anchor, Badge, Button, Collapse, Divider, Group, Stack, Text } from "@mantine/core";
-import { IconCamera as Camera, IconPhoto as Photo } from "@tabler/icons-react";
-import React, { useState } from "react";
+import { ActionIcon, Anchor, Badge, Button, Collapse, Divider, Group, Stack, Text } from "@mantine/core";
+import { useLocalStorage } from "@mantine/hooks";
+import { IconCamera as Camera, IconEye as Eye, IconEyeOff as EyeOff, IconPhoto as Photo } from "@tabler/icons-react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { serverAddress } from "../../api_client/apiClient";
 import type { FileVariant } from "../../api_client/photos/types";
@@ -21,6 +22,55 @@ function getVariantBadgeProps(variant: FileVariant): { color: string; label: str
     unknown: { color: "gray", label: "FILE" },
   };
   return typeMap[variant.type] || typeMap.unknown;
+}
+
+/**
+ * The photo's filename, on one line unless the viewer asked for all of it.
+ * Hovering shows the whole name in a tooltip, which a touch screen never
+ * does, so a cut-off name also gets an eye button that shows it in full,
+ * wrapped. The choice is remembered for every photo in this browser.
+ */
+export function FileName({ fileName, href }: { fileName: string; href: string }) {
+  const { t } = useTranslation();
+  const [showFull, setShowFull] = useLocalStorage({ key: "lightbox-full-filename", defaultValue: false });
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [cutOff, setCutOff] = useState(false);
+
+  useLayoutEffect(() => {
+    const text = textRef.current;
+    if (!text || showFull) return;
+    setCutOff(text.scrollWidth > text.clientWidth + 1 || text.scrollHeight > text.clientHeight + 1);
+  }, [fileName, showFull]);
+
+  const label = showFull ? t("lightbox.sidebar.filenameOneLine") : t("lightbox.sidebar.filenameFull");
+  return (
+    <>
+      <Anchor href={href} target="_blank" style={{ minWidth: 0 }}>
+        <Text
+          ref={textRef}
+          fw={800}
+          lineClamp={showFull ? undefined : 1}
+          style={{ maxWidth: 225, overflowWrap: "anywhere" }}
+          title={fileName}
+        >
+          {fileName}
+        </Text>
+      </Anchor>
+      {(cutOff || showFull) && (
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="sm"
+          onClick={() => setShowFull(!showFull)}
+          aria-label={label}
+          aria-pressed={showFull}
+          title={label}
+        >
+          {showFull ? <EyeOff size={16} /> : <Eye size={16} />}
+        </ActionIcon>
+      )}
+    </>
+  );
 }
 
 /**
@@ -51,13 +101,8 @@ function PhotoInfoSection({
         <Group justify="flex-start">
           <Photo />
           <div>
-            <Group gap={4} wrap="nowrap">
-              <Anchor href={`${serverAddress}/media/photos/${photoDetail.image_hash}`} target="_blank">
-                {/* Clamped to one line; the tooltip shows the whole name. */}
-                <Text fw={800} lineClamp={1} style={{ maxWidth: 225 }} title={fileName}>
-                  {fileName}
-                </Text>
-              </Anchor>
+            <Group gap={4} wrap="nowrap" align="flex-start">
+              <FileName fileName={fileName} href={`${serverAddress}/media/photos/${photoDetail.image_hash}`} />
               {!isPublic && <ReplacePhotoButton photoDetail={photoDetail} fileName={fileName} />}
             </Group>
             <Group gap="xs">

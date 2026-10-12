@@ -549,7 +549,9 @@
       "noTags": "No tags",
       "noMentionResults": "No results",
       "tagsSaveFailed": "The tags could not be saved. Please try again.",
-      "save": "Save"
+      "save": "Save",
+      "filenameFull": "Show the whole filename",
+      "filenameOneLine": "Show the filename on one line"
     },
     "addface": {
       "tooltip": "Add a face the scan missed",
