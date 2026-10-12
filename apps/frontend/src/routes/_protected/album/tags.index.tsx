@@ -40,7 +40,8 @@ function AlbumTag() {
 
   const [selectedTag, setSelectedTag] = useState<{ id: number; name: string } | null>(null);
   const [newName, setNewName] = useState("");
-  const [mergeSource, setMergeSource] = useState<string | null>(null);
+  // Merging starts from the tag that goes away; the dialog asks where it goes.
+  const [mergeTarget, setMergeTarget] = useState<string | null>(null);
   const [isRenameOpen, { open: openRename, close: closeRename }] = useDisclosure(false);
   const [isMergeOpen, { open: openMerge, close: closeMerge }] = useDisclosure(false);
   const [isDeleteOpen, { open: openDelete, close: closeDelete }] = useDisclosure(false);
@@ -55,7 +56,7 @@ function AlbumTag() {
 
   function startMerge(tag: { id: number; name: string }) {
     setSelectedTag(tag);
-    setMergeSource(null);
+    setMergeTarget(null);
     openMerge();
   }
 
@@ -118,7 +119,7 @@ function AlbumTag() {
                 {t("rename")}
               </Menu.Item>
               <Menu.Item leftSection={<ArrowMerge size={14} />} onClick={() => startMerge(tag)}>
-                {t("tagalbum.merge")}
+                {t("tagalbum.mergeinto")}
               </Menu.Item>
               <Menu.Item leftSection={<Trash size={14} />} onClick={() => startDelete(tag)}>
                 {t("delete")}
@@ -194,13 +195,13 @@ function AlbumTag() {
         </Stack>
       </Modal>
 
-      <Modal size="sm" opened={isMergeOpen} onClose={closeMerge} title={t("tagalbum.mergetag")}>
+      <Modal size="sm" opened={isMergeOpen} onClose={closeMerge} title={t("tagalbum.mergeinto")}>
         <Stack>
-          <Text>{t("tagalbum.mergeexplanation", { name: selectedTag?.name ?? "" })}</Text>
+          <Text>{t("tagalbum.mergeintoexplanation", { name: selectedTag?.name ?? "" })}</Text>
           <Select
             searchable
-            value={mergeSource}
-            onChange={setMergeSource}
+            value={mergeTarget}
+            onChange={setMergeTarget}
             placeholder={t("tagalbum.tagplaceholder")}
             data={(tags ?? [])
               .filter(tag => tag.id !== selectedTag?.id)
@@ -212,15 +213,15 @@ function AlbumTag() {
             </Button>
             <Button
               color="green"
-              disabled={!mergeSource}
+              disabled={!mergeTarget}
               onClick={() => {
-                const source = (tags ?? []).find(tag => `${tag.id}` === mergeSource);
-                if (selectedTag && source) {
+                const target = (tags ?? []).find(tag => `${tag.id}` === mergeTarget);
+                if (selectedTag && target) {
                   mergeTags.mutate({
-                    id: selectedTag.id,
-                    name: selectedTag.name,
-                    sourceId: source.id,
-                    sourceName: source.name,
+                    id: target.id,
+                    name: target.name,
+                    sourceId: selectedTag.id,
+                    sourceName: selectedTag.name,
                   });
                 }
                 closeMerge();

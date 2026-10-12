@@ -169,7 +169,7 @@ Tags match exactly, unlike the [text search](./search.md), which also matches a 
 On the Albums page, open **Tags → View all**. The three-dot menu on any tag offers:
 
 - **Rename** — the tag keeps its photos.
-- **Merge** — pick another tag to fold into this one; its photos move over and it is deleted.
+- **Merge into…** — open this on the tag you want to get rid of, then pick the tag to keep. Its photos move to the tag you picked, and the tag you started from is deleted. Until the first release after 1.2.1 it works the other way round: it is called **Merge**, you start from the tag to keep and pick the one to delete.
 - **Delete** — removes the tag. Your photos are untouched.
 
 :::note

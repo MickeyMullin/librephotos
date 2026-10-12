@@ -1088,8 +1088,8 @@
     "tagalreadyexists": "Tag {{name}} already exists.",
     "tagplaceholder": "Tag name",
     "merge": "Merge",
-    "mergetag": "Merge Tag",
-    "mergeexplanation": "Pick the tag to merge into {{name}}. Its photos move over and the merged tag is deleted.",
+    "mergeinto": "Merge into…",
+    "mergeintoexplanation": "Pick the tag to merge {{name}} into. Its photos move to that tag, and {{name}} is deleted.",
     "deleteexplanation": "This action will permanently delete the tag. The photos themselves are not deleted."
   },
   "useralbum": {
