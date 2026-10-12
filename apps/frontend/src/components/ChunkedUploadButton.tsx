@@ -7,6 +7,18 @@ import { useGetSettingsQuery } from "../api_client/settings";
 import { useCurrentUserSelfDetailsQuery } from "../api_client/user/hooks/useCurrentUserSelfDetailsQuery";
 import { useUpload } from "./upload";
 
+const HIDDEN_FILE_INPUT: React.CSSProperties = {
+  position: "absolute",
+  width: 0,
+  height: 0,
+  opacity: 0,
+  overflow: "hidden",
+  border: 0,
+  margin: 0,
+  padding: 0,
+  pointerEvents: "none",
+};
+
 export function ChunkedUploadButton() {
   const { t } = useTranslation();
   const { data: userSelfDetails } = useCurrentUserSelfDetailsQuery();
@@ -35,8 +47,15 @@ export function ChunkedUploadButton() {
   }
 
   const uploadContent = (
-    <div {...getRootProps({ className: "dropzone" })} style={{ alignContent: "center", display: "flex" }}>
-      <input {...getInputProps()} />
+    <div
+      {...getRootProps({ className: "dropzone" })}
+      style={{ alignContent: "center", display: "flex", position: "relative" }}
+    >
+      {/* Out of the layout: WebKit (every iPhone browser) gave this zero-width
+          input the width of a file picker, which stretched the top bar's
+          button group across the screen and pushed search off its left edge.
+          Not display: none, so the button can still open the picker. */}
+      <input {...getInputProps({ style: HIDDEN_FILE_INPUT })} />
       <Indicator processing disabled={!isUploading} color="blue" size={8} offset={3}>
         <ActionIcon
           color="gray"

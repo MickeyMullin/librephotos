@@ -12,7 +12,7 @@ The spotlight is a powerful command palette that gives you instant access to sea
 
 ### Opening the Spotlight
 
-Press any of these keyboard shortcuts to open the spotlight:
+Click the **Search or press** field in the top bar, or press any of these keyboard shortcuts to open the spotlight. On a phone or other narrow screen the field is a magnifying-glass button next to the upload button instead; it opens the same spotlight. The magnifying-glass button is not in a release yet; it ships with the first release after 1.2.1.
 
 | Shortcut | Platform |
 |----------|----------|

@@ -866,6 +866,7 @@
   "spotlight": {
     "placeholder": "Search photos, run commands...",
     "triggerPlaceholder": "Search or press",
+    "triggerLabel": "Search",
     "nothingFound": "No results found",
     "searchFor": "Search for \"{{query}}\"",
     "groups": {

@@ -1,5 +1,6 @@
 .topMenuGroup {
-  justify-content: center;
+  /* On a phone the search is an icon, next to the upload button on the right. */
+  justify-content: flex-end;
   align-items: center;
   margin-top: 4px;
 }
