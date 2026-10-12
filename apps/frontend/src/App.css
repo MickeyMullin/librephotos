@@ -234,3 +234,18 @@
   width: 100% - 175px;
 }
 
+
+/*
+ * iOS zooms the page in on any text field under 16px when it gets focus, and
+ * never zooms back out: editing tags in the lightbox left its toolbar and the
+ * save button off-screen. Mantine's inputs are 14px. Touch screens get 16px
+ * instead, which keeps pinch-zoom available (unlike maximum-scale=1).
+ */
+@media (any-pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    font-size: max(16px, 1em) !important;
+  }
+}

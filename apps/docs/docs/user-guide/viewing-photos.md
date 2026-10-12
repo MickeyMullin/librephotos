@@ -81,7 +81,7 @@ Animated GIFs and WebPs move both in the grid and in the photo viewer, which pla
 The toolbar at the top provides quick actions. From left to right:
 
 - **Slideshow** - Start or stop an automatic slideshow. While it runs, a dropdown lets you choose the interval (3, 5, 10, 15 or 30 seconds).
-- **Zoom in / Zoom out** - Magnify the image. Available for still photos only, not videos.
+- **Zoom in / Zoom out** - Magnify the image, or zoom back out. Available for still photos only, not videos. See [Zooming](#zooming) for pinch, double tap and panning.
 - **Fullscreen** - Enter or leave fullscreen mode for distraction-free viewing. On an iPhone, where no browser lets a web page go fullscreen, it hides the toolbar, thumbnails and info panel instead and shows the photo on black; tap the button in the corner to leave. The browser's own address bar stays visible.
 - **Copy to clipboard** - Copy the photo as an image to your clipboard, ready to paste into a chat, a document or an email. It copies the display-size version the viewer shows; use **Download** for the original file. The button is shown for still photos, and only when LibrePhotos is served over HTTPS, because browsers allow clipboard access on secure pages only.
 - **Hide / Show** (eye icon) - Hide the photo from the main timeline, or unhide it.
@@ -97,6 +97,14 @@ The Hide, Favorite, Share link, Delete and Rotate controls are only shown when y
 There is no download or share button in the lightbox itself. To download photos, select them in the gallery grid and choose **Download** from the selection actions menu; the download dialog can also include the other photos from each selected photo's stack. To share photos with other users, select them in the grid and choose **Sharing** from the same menu.
 
 To put a single photo on the clipboard, open it and press the **Copy to clipboard** button or `Ctrl` + `c` (`⌘` + `c` on macOS). The browser's own right-click menu on the picture offers **Copy image** as well.
+
+### Zooming
+
+Still photos zoom in four ways: the **Zoom** button or `z` (twice the size, centered), a double click or double tap (into the spot you tapped), a pinch on a phone or tablet, and a pinch on a trackpad or `Ctrl` + scroll wheel on a computer. A pinch zooms around your fingers, up to five times the size. While a photo is zoomed in, drag it with one finger or the mouse to look around; it stops at the photo's edges. Double tap again, pinch back out or press the button to return to the whole photo. Swiping to the next or previous photo works only while the photo is not zoomed in, so a drag on a zoomed photo never jumps to another one by accident.
+
+On a phone, pinching the photo zooms only the photo, never the page, so the toolbar and the close button stay where they are. Pinching elsewhere in the viewer, such as on the toolbar or the info panel, still zooms the page for easier reading, and two fingers pinch it back out. Text fields (tags, captions, search) use a 16-pixel font on touch screens, which stops iPhones from zooming the page in whenever you start typing.
+
+The pinch and double-tap zoom, and the larger text fields on touch screens, are not in a release yet; they ship with the first release after 1.2.1.
 
 ### Rotating Photos
 

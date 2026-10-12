@@ -7,6 +7,7 @@ import { FaceDrawLayer } from "./FaceDrawLayer";
 import { FaceOverlay } from "./FaceOverlay";
 import type { FaceLocationType } from "./lightbox.types";
 import { OcrTextOverlay } from "./OcrTextOverlay";
+import { NO_ZOOM, type Zoom } from "./usePhotoZoom";
 import { VideoPlayer } from "./VideoPlayer";
 
 export type MediaDisplayProps = {
@@ -14,11 +15,15 @@ export type MediaDisplayProps = {
   image_hash?: string | undefined;
   isMainContent?: boolean;
   type: string;
-  bind?: any;
+  /**
+   * The lightbox's zoom surface (see usePhotoZoom). Given only for the photo
+   * being shown, which then takes every touch gesture for itself.
+   */
+  surfaceRef?: React.Ref<HTMLDivElement>;
+  zoom?: Zoom;
+  /** A pinch or pan is under way: follow the fingers without easing. */
+  gesturing?: boolean;
   faceLocation: FaceLocationType;
-  toggleZoom?: () => void;
-  scale?: number;
-  offset?: { x: number; y: number };
   handleDragStart: (event: React.DragEvent) => void;
   fullHeight?: boolean;
   playing?: boolean;
@@ -43,11 +48,10 @@ export function MediaDisplay({
   image_hash,
   isMainContent = false,
   type,
-  bind,
+  surfaceRef,
+  zoom = NO_ZOOM,
+  gesturing = false,
   faceLocation,
-  toggleZoom,
-  scale = 1,
-  offset = { x: 0, y: 0 },
   handleDragStart,
   fullHeight = false,
   playing = false,
@@ -152,14 +156,18 @@ export function MediaDisplay({
 
   // Shared by the image and the OCR overlay so the selectable text tracks
   // zoom, pan and rotation exactly.
-  const mainTransition = isMainContent && !suppressRotationTransition ? "transform 0.3s ease-out" : "none";
+  const mainTransition =
+    isMainContent && !suppressRotationTransition && !gesturing ? "transform 0.3s ease-out" : "none";
   const mainTransform = isMainContent
-    ? `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotationAngle}deg)`
+    ? `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale}) rotate(${rotationAngle}deg)`
     : "none";
   return (
     <div
-      {...(isMainContent && bind ? bind() : {})}
+      ref={isMainContent ? surfaceRef : undefined}
       style={{
+        // The browser must not pinch-zoom the page here (the lightbox's
+        // toolbar would end up off-screen); the photo zooms instead.
+        touchAction: isMainContent && surfaceRef ? "none" : undefined,
         position: "relative",
         overflow: "hidden",
         display: "flex",
@@ -176,7 +184,6 @@ export function MediaDisplay({
           alt={isMainContent ? "Main Content" : "Preview"}
           loading="eager"
           onDragStart={handleDragStart}
-          onDoubleClick={isMainContent && toggleZoom ? toggleZoom : undefined}
           onLoad={handleLoad}
           style={{
             transition: mainTransition,

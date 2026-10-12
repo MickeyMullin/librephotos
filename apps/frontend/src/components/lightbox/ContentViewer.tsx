@@ -3,7 +3,6 @@ import "@mantine/carousel/styles.css";
 import { ActionIcon, Modal, Stack } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
 import { IconArrowsMinimize as Minimize } from "@tabler/icons-react";
-import { useGesture } from "@use-gesture/react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,6 +30,7 @@ import { MediaDisplay } from "./MediaDisplay";
 import { Sidebar } from "./Sidebar";
 import { ThumbnailNavigation } from "./ThumbnailNavigation";
 import { useLightboxFullscreen } from "./useLightboxFullscreen";
+import { usePhotoZoom } from "./usePhotoZoom";
 import { requestLightboxSeek, SEEK_LONG_STEP_SECONDS, SEEK_STEP_SECONDS } from "./VideoPlayer";
 
 // On a phone 100vh is the height with the browser's toolbars hidden, so the
@@ -55,9 +55,6 @@ export function ContentViewer({
   onPhotoSelect,
   startSlideshow = false,
 }: ContentViewerProps) {
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 }); // For dragging the image
   const [lightboxSidebarShow, setLightBoxSidebarShow] = useState(false);
   const [faceLocation, setFaceLocation] = useState<FaceLocationType>(null);
   const [embla, setEmbla] = useState<any | null>(null);
@@ -251,6 +248,15 @@ export function ContentViewer({
   // Called when the main image finishes loading.  When a rotation just completed
   // and the server has physically baked the new orientation into the file, we
   // instantly (no transition) snap the CSS angle back to 0 so the swap is invisible.
+  // Pinch, double tap and pan on the photo; resets on every other photo.
+  const {
+    surfaceRef: zoomSurfaceRef,
+    zoom,
+    isZoomed,
+    gesturing,
+    toggleZoom,
+  } = usePhotoZoom({ enabled: enableZoom && type === "photo" && !isDrawingFace, resetKey: mainSrc });
+
   const handleImageLoad = useCallback(() => {
     if (!pendingRotationReset.current) return;
     pendingRotationReset.current = false;
@@ -283,13 +289,6 @@ export function ContentViewer({
     // can move at all, and a handler registered on the first photo would otherwise
     // keep seeing "no previous photo" after navigating forward.
   }, [embla, prevSrc, nextSrc, onMovePrevRequest, onMoveNextRequest]);
-
-  const toggleZoom = () => {
-    const newZoomState = !isZoomed;
-    setIsZoomed(newZoomState);
-    setScale(newZoomState ? 2 : 1);
-    setOffset({ x: 0, y: 0 });
-  };
 
   // Handle close - exit fullscreen first if active
   const handleClose = () => {
@@ -382,27 +381,6 @@ export function ContentViewer({
     ],
   ]);
 
-  const bind = useGesture({
-    onPinch: state => {
-      setScale(Math.max(1, Math.min(scale * state.offset[0], 4)));
-    },
-    onPinchEnd: () => {
-      if (scale < 1.5) {
-        setScale(1);
-      } else {
-        setScale(Math.min(scale, 4));
-      }
-    },
-    onDrag: state => {
-      if (isZoomed) {
-        setOffset({
-          x: state.offset[0],
-          y: state.offset[1],
-        });
-      }
-    },
-  });
-
   useEffect(() => {
     if (embla) {
       embla.reInit();
@@ -414,7 +392,11 @@ export function ContentViewer({
   };
 
   return (
-    <Modal.Root opened onClose={handleModalClose} fullScreen>
+    // allowPinchZoom: the scroll lock otherwise cancels two-finger moves too,
+    // so a page that got zoomed anyway (iOS zooms in on a small text field)
+    // could be neither panned nor pinched back, with the toolbar out of
+    // reach. The photo itself never lets the page zoom (usePhotoZoom).
+    <Modal.Root opened onClose={handleModalClose} fullScreen removeScrollProps={{ allowPinchZoom: true }}>
       <Modal.Overlay blur={5} backgroundOpacity={0.8} />
       <Modal.Content style={{ background: "transparent" }}>
         <Modal.Body
@@ -500,9 +482,10 @@ export function ContentViewer({
                 slideSize="100%"
                 slideGap={0}
                 orientation="horizontal"
-                loop={false}
-                draggable={!isZoomed}
-                containScroll="trimSnaps"
+                // Mantine 8 reads these only from emblaOptions; a `draggable`
+                // prop is dropped, which let a pan on a zoomed photo swipe to
+                // the next one.
+                emblaOptions={{ loop: false, containScroll: "trimSnaps", watchDrag: !isZoomed }}
               >
                 {/* Previous slide */}
                 <Carousel.Slide>
@@ -510,11 +493,7 @@ export function ContentViewer({
                     id={prevSrc ?? undefined}
                     image_hash={prevSrcHash ?? undefined}
                     type={type}
-                    bind={bind}
                     faceLocation={faceLocation}
-                    toggleZoom={toggleZoom}
-                    scale={scale}
-                    offset={offset}
                     handleDragStart={handleDragStart}
                     playing={false}
                   />
@@ -542,11 +521,10 @@ export function ContentViewer({
                         image_hash={mainSrcHash}
                         isMainContent
                         type={type}
-                        bind={bind}
+                        surfaceRef={zoomSurfaceRef}
+                        zoom={zoom}
+                        gesturing={gesturing}
                         faceLocation={faceLocation}
-                        toggleZoom={toggleZoom}
-                        scale={scale}
-                        offset={offset}
                         handleDragStart={handleDragStart}
                         playing={playing}
                         onEnded={handleVideoEnded}
@@ -572,11 +550,7 @@ export function ContentViewer({
                     id={nextSrc ?? undefined}
                     image_hash={nextSrcHash ?? undefined}
                     type={type}
-                    bind={bind}
                     faceLocation={faceLocation}
-                    toggleZoom={toggleZoom}
-                    scale={scale}
-                    offset={offset}
                     handleDragStart={handleDragStart}
                     playing={false}
                   />
