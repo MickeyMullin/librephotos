@@ -39,3 +39,16 @@ export const tagOptionsFilter: OptionsFilter = ({ options, search, limit }) => {
 
   return [...startsWithQuery, ...containsQuery].slice(0, limit);
 };
+
+/**
+ * The tag a typed name stands for, when a comma finishes it: the tag with
+ * exactly that name (in any case), else the first suggestion for it.
+ */
+export function resolveTypedTag(text: string, options: ComboboxItem[]): ComboboxItem | undefined {
+  const query = text.trim().toLowerCase();
+  if (query.length === 0) return undefined;
+  const exact = options.find(option => option.label.toLowerCase() === query);
+  if (exact) return exact;
+  const [first] = tagOptionsFilter({ options, search: query, limit: 1 });
+  return first && !("group" in first) ? first : undefined;
+}

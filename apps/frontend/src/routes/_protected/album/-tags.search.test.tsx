@@ -144,3 +144,52 @@ describe("tag search page", () => {
     expect(stubs.listProps.emptyStateConfig.title).toBe("Pick tags to search for");
   });
 });
+
+// Types into a tag box the way a keyboard or a paste does.
+async function type(input: HTMLInputElement, text: string) {
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+  await act(async () => {
+    setValue.call(input, text);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+
+function box(container: HTMLElement, label: string) {
+  return container.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)!;
+}
+
+describe("finishing a tag with a comma", () => {
+  it("adds the typed tag to the search, in any case", async () => {
+    stubs.search = { tags: "1" };
+    const container = await render();
+    const input = box(container, "Photos with these tags");
+    await type(input, "DOG,");
+    const { search } = stubs.navigate.mock.calls[0][0];
+    expect(search({})).toMatchObject({ tags: "1,2" });
+    expect(input.value).toBe("");
+  });
+
+  it("adds to the exclusions from the other box", async () => {
+    const container = await render();
+    await type(box(container, "Without these tags"), "night,");
+    const { search } = stubs.navigate.mock.calls[0][0];
+    expect(search({})).toMatchObject({ exclude: "3" });
+  });
+
+  it("takes the first suggestion for a partly typed name, and several at once from a paste", async () => {
+    const container = await render();
+    await type(box(container, "Photos with these tags"), "bea, ni, do");
+    const { search } = stubs.navigate.mock.calls[0][0];
+    expect(search({})).toMatchObject({ tags: "1,3" });
+    // The last name has no comma yet: it stays in the box.
+    expect(box(container, "Photos with these tags").value).toBe("do");
+  });
+
+  it("keeps a name that matches no tag in the box, without the comma", async () => {
+    const container = await render();
+    const input = box(container, "Photos with these tags");
+    await type(input, "cat,");
+    expect(stubs.navigate).not.toHaveBeenCalled();
+    expect(input.value).toBe("cat");
+  });
+});

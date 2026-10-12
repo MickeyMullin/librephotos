@@ -1,7 +1,7 @@
-import { Group, MultiSelect, SegmentedControl } from "@mantine/core";
+import { Group, MultiSelect, SegmentedControl, type ComboboxItem, type MultiSelectProps } from "@mantine/core";
 import { IconTags as Tags } from "@tabler/icons-react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetchTagSearchQuery, useFetchTagsQuery } from "../../../api_client/tags/hooks";
 import type { TagMatch } from "../../../api_client/tags/types";
@@ -9,7 +9,7 @@ import { validateMediaSearch, type MediaType } from "../../../components/photoli
 import type { EmptyStateConfig } from "../../../components/photolist/PhotoListView";
 import { PhotoListView } from "../../../components/photolist/PhotoListView";
 import { useMediaTypeFilter } from "../../../components/photolist/useMediaTypeFilter";
-import { TAG_SUGGESTION_LIMIT, tagOptionsFilter } from "../../../util/tagOptionsFilter";
+import { resolveTypedTag, TAG_SUGGESTION_LIMIT, tagOptionsFilter } from "../../../util/tagOptionsFilter";
 
 type TagSearchRouteSearch = {
   media?: MediaType;
@@ -43,6 +43,58 @@ export const Route = createFileRoute("/_protected/album/tags/search")({
   component: TagSearchPage,
   validateSearch: validateTagSearch,
 });
+
+type TagPickerProps = Omit<MultiSelectProps, "data" | "value" | "onChange"> & {
+  data: ComboboxItem[];
+  value: string[];
+  onChange: (value: string[]) => void;
+};
+
+// A tag box where a comma finishes the tag typed so far, as in the tag editor.
+// It watches the typed text rather than the key, so a phone keyboard (which
+// may not report which key it was) and a pasted "beach, dog" work too. Only
+// existing tags can be searched for: a name that matches none stays in the
+// box, without the comma, to be corrected.
+function TagPicker({ data, value, onChange, ...props }: TagPickerProps) {
+  const [search, setSearch] = useState("");
+
+  const handleSearchChange = (text: string) => {
+    if (!text.includes(",")) {
+      setSearch(text);
+      return;
+    }
+    const parts = text.split(",");
+    const rest = parts.pop() ?? "";
+    const picked = [...value];
+    let unmatched: string | undefined;
+    parts.forEach(part => {
+      const tag = resolveTypedTag(
+        part,
+        data.filter(option => !picked.includes(option.value))
+      );
+      if (tag) picked.push(tag.value);
+      else if (part.trim()) unmatched = part.trim();
+    });
+    if (picked.length !== value.length) onChange(picked);
+    setSearch(unmatched ?? rest.trimStart());
+  };
+
+  return (
+    <MultiSelect
+      {...props}
+      data={data}
+      value={value}
+      onChange={onChange}
+      searchable
+      searchValue={search}
+      onSearchChange={handleSearchChange}
+      filter={tagOptionsFilter}
+      limit={TAG_SUGGESTION_LIMIT}
+      clearable
+      hidePickedOptions
+    />
+  );
+}
 
 // Search by tags: photos carrying all (or any) of the chosen tags, optionally
 // without some others. The search lives in the URL, so it can be bookmarked.
@@ -98,17 +150,12 @@ function TagSearchPage() {
 
   const controls = (
     <Group gap="xs" mt={6} wrap="wrap" align="center" onClick={event => event.stopPropagation()}>
-      <MultiSelect
+      <TagPicker
         aria-label={t("tagsearch.with")}
         placeholder={tags.length ? undefined : t("tagsearch.with")}
         data={includeOptions}
         value={tags.map(String)}
         onChange={values => update({ tags: values.map(Number) })}
-        filter={tagOptionsFilter}
-        limit={TAG_SUGGESTION_LIMIT}
-        searchable
-        clearable
-        hidePickedOptions
         nothingFoundMessage={t("tagsearch.notag")}
         w={{ base: "100%", sm: 320 }}
       />
@@ -124,17 +171,12 @@ function TagSearchPage() {
           ]}
         />
       )}
-      <MultiSelect
+      <TagPicker
         aria-label={t("tagsearch.without")}
         placeholder={exclude.length ? undefined : t("tagsearch.without")}
         data={excludeOptions}
         value={exclude.map(String)}
         onChange={values => update({ exclude: values.map(Number) })}
-        filter={tagOptionsFilter}
-        limit={TAG_SUGGESTION_LIMIT}
-        searchable
-        clearable
-        hidePickedOptions
         nothingFoundMessage={t("tagsearch.notag")}
         w={{ base: "100%", sm: 240 }}
       />

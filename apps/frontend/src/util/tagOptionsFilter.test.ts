@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { tagOptionsFilter } from "./tagOptionsFilter";
+import { resolveTypedTag, tagOptionsFilter } from "./tagOptionsFilter";
 
 const options = ["Alberta", "beach", "Beachcomber", "holiday", "seaside beach"].map(name => ({
   value: name,
@@ -39,5 +39,20 @@ describe("tagOptionsFilter", () => {
 
   test("returns nothing for a query no tag matches", () => {
     expect(filter("zzz")).toEqual([]);
+  });
+});
+
+describe("resolveTypedTag", () => {
+  const tags = ["Holiday 2024", "holiday", "seaside"].map(name => ({ value: name, label: name }));
+
+  test("prefers the tag with exactly that name, in any case", () => {
+    // The suggestions would lead with "Holiday 2024".
+    expect(resolveTypedTag(" HOLIDAY ", tags)?.label).toBe("holiday");
+  });
+
+  test("falls back to the first suggestion, and to nothing", () => {
+    expect(resolveTypedTag("sea", tags)?.label).toBe("seaside");
+    expect(resolveTypedTag("cat", tags)).toBeUndefined();
+    expect(resolveTypedTag("  ", tags)).toBeUndefined();
   });
 });

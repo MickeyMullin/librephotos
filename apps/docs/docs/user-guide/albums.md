@@ -162,6 +162,8 @@ To find photos by their tags, open **Tags → View all** and click **Search by t
 - **All tags / Any tag**: appears once two tags are picked. **All tags** shows photos that carry every one of them; **Any tag** shows photos that carry at least one.
 - **Without these tags**: leaves out photos that carry any of these. It also works on its own, for example to see every photo that is not tagged `reviewed`.
 
+In both boxes, a comma finishes the tag you are typing, as in the tag editor: type `dog,` and **dog** is added. The case does not matter, and a name you have only partly typed becomes the first suggestion, so `ni,` adds **night** if that is the top match. Pasting `beach, dog, night` adds all three. A name that matches no tag stays in the box for you to correct, since you can only search for tags that exist. Finishing a tag with a comma is not in a release yet either.
+
 Tags match exactly, unlike the [text search](./search.md), which also matches a word inside a longer tag name. The search is kept in the page address, so it survives a reload and can be bookmarked; it refers to tags by their id, so a bookmark keeps working after a tag is renamed. The **All / Photos / Videos** toggle narrows the results, and the photos can be selected and edited like any other album.
 
 ### Renaming, merging and deleting tags
