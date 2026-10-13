@@ -12,7 +12,7 @@ import {
   useRemovePhotosFromTagMutation,
 } from "../../api_client/tags/hooks";
 import { notification } from "../../service/notifications";
-import { TAG_SUGGESTION_LIMIT, tagOptionsFilter } from "../../util/tagOptionsFilter";
+import { enterSavesTags, TAG_SUGGESTION_LIMIT, tagOptionsFilter } from "../../util/tagOptionsFilter";
 
 interface TagsSectionProps {
   photoDetail: PhotoType;
@@ -23,6 +23,9 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [draftTags, setDraftTags] = useState<string[]>([]);
+  // What is typed but not yet a tag: Enter turns that into a tag, and only
+  // saves once there is nothing left to turn.
+  const [typed, setTyped] = useState("");
 
   const { data: photoTags } = useFetchPhotoTagsQuery(photoDetail.id);
   const { data: allTags } = useFetchTagsQuery();
@@ -41,6 +44,7 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
   const handleCancel = () => {
     setEditing(false);
     setDraftTags([]);
+    setTyped("");
   };
 
   const handleSave = async () => {
@@ -73,6 +77,7 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
 
     setEditing(false);
     setDraftTags([]);
+    setTyped("");
   };
 
   return (
@@ -105,6 +110,14 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
         <TagsInput
           value={draftTags}
           onChange={setDraftTags}
+          searchValue={typed}
+          onSearchChange={setTyped}
+          onKeyDown={event => {
+            if (!isSaving && enterSavesTags(event, typed)) {
+              event.preventDefault();
+              handleSave();
+            }
+          }}
           data={(allTags ?? []).map(tag => tag.name)}
           filter={tagOptionsFilter}
           limit={TAG_SUGGESTION_LIMIT}

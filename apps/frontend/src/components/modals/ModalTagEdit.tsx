@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { BulkPhotoQuery } from "../../api_client/photos/types";
 import { useFetchTagsQuery, useTagPhotosByNameMutation } from "../../api_client/tags/hooks";
 import { notification } from "../../service/notifications";
-import { TAG_SUGGESTION_LIMIT, tagOptionsFilter } from "../../util/tagOptionsFilter";
+import { enterSavesTags, TAG_SUGGESTION_LIMIT, tagOptionsFilter } from "../../util/tagOptionsFilter";
 import { Tile } from "../Tile";
 import classes from "./ModalTagEdit.module.css";
 
@@ -123,7 +123,7 @@ export function ModalTagEdit(props: Props) {
           // input is empty, so a trailing Enter does not fire the dialog while
           // the user is still listing names.
           onKeyDown={event => {
-            if (event.key === "Enter" && pendingTag.trim().length === 0 && draftTags.length > 0) {
+            if (draftTags.length > 0 && enterSavesTags(event, pendingTag)) {
               event.preventDefault();
               handleSubmit();
             }

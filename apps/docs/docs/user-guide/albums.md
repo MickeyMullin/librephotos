@@ -148,7 +148,7 @@ Every tag in the box is applied to every photo in the selection. Tagging is addi
 
 ### Tagging one photo
 
-Open a photo and use the **Tags** section of the [sidebar](./viewing-photos.md) — the pencil button opens the same comma-separated editor, and here it both adds and removes: whatever you leave in the box is what the photo ends up with. Click a tag badge to jump to that tag's album.
+Open a photo and use the **Tags** section of the [sidebar](./viewing-photos.md) — the pencil button opens the same comma-separated editor, and here it both adds and removes: whatever you leave in the box is what the photo ends up with. Enter turns what you have typed into a tag (or picks the suggestion you highlighted with the arrow keys); press it again on the empty box to save, as the tick does. Saving with Enter is not in a release yet. Click a tag badge to jump to that tag's album.
 
 ### Searching by tags
 

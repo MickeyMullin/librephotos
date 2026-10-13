@@ -1,4 +1,5 @@
 import type { ComboboxItem, OptionsFilter } from "@mantine/core";
+import type React from "react";
 
 /** How many suggestions to show at once. Enough to scan without scrolling. */
 export const TAG_SUGGESTION_LIMIT = 10;
@@ -51,4 +52,16 @@ export function resolveTypedTag(text: string, options: ComboboxItem[]): Combobox
   if (exact) return exact;
   const [first] = tagOptionsFilter({ options, search: query, limit: 1 });
   return first && !("group" in first) ? first : undefined;
+}
+
+/**
+ * Whether Enter in a tag box should save rather than pick a tag: nothing is
+ * typed, no suggestion is highlighted with the arrow keys (Mantine marks it
+ * inside the list the box points to), and no IME is composing.
+ */
+export function enterSavesTags(event: React.KeyboardEvent<HTMLInputElement>, typed: string) {
+  if (event.key !== "Enter" || event.nativeEvent.isComposing || typed.trim().length > 0) return false;
+  const listId = event.currentTarget.getAttribute("aria-controls");
+  const list = listId ? document.getElementById(listId) : null;
+  return !list?.querySelector("[data-combobox-selected]");
 }
