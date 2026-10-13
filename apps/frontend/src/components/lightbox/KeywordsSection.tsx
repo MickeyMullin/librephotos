@@ -75,6 +75,8 @@ export function KeywordsSection({ photoDetail }: KeywordsSectionProps) {
           onChange={setDraftKeywords}
           placeholder={t("lightbox.sidebar.addKeyword", "Add keyword…")}
           splitChars={[",", " "]}
+          // Keep iOS from capitalizing each keyword (a space starts a new one).
+          autoCapitalize="none"
           clearable
         />
       ) : keywords.length > 0 ? (

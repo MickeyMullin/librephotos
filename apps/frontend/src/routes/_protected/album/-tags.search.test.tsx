@@ -159,6 +159,12 @@ function box(container: HTMLElement, label: string) {
 }
 
 describe("finishing a tag with a comma", () => {
+  it("keeps the phone keyboard from capitalizing tag names", async () => {
+    const container = await render();
+    expect(box(container, "Photos with these tags").getAttribute("autocapitalize")).toBe("none");
+    expect(box(container, "Without these tags").getAttribute("autocapitalize")).toBe("none");
+  });
+
   it("adds the typed tag to the search, in any case", async () => {
     stubs.search = { tags: "1" };
     const container = await render();

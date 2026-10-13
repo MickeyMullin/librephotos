@@ -111,6 +111,8 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
           placeholder={t("lightbox.sidebar.addTag")}
           splitChars={[","]}
           clearable
+          // iOS would capitalize the first letter, and "Beach" is a different tag from "beach".
+          autoCapitalize="none"
         />
       ) : tags.length > 0 ? (
         <Group gap="xs">

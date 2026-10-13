@@ -191,6 +191,12 @@ async function renderModal(options: RenderOptions = {}) {
 }
 
 describe("ModalTagEdit", () => {
+  it("keeps the phone keyboard from capitalizing tag names", async () => {
+    const modal = await renderModal();
+    expect(tagInput().getAttribute("autocapitalize")).toBe("none");
+    await modal.unmount();
+  });
+
   it("reuses a tag the account already owns instead of creating it again", async () => {
     const modal = await renderModal();
     await modal.type("beach,");

@@ -92,6 +92,8 @@ function TagPicker({ data, value, onChange, ...props }: TagPickerProps) {
       limit={TAG_SUGGESTION_LIMIT}
       clearable
       hidePickedOptions
+      // Keep iOS from capitalizing the first letter of a tag name.
+      autoCapitalize="none"
     />
   );
 }

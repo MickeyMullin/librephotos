@@ -116,6 +116,8 @@ export function ModalTagEdit(props: Props) {
           limit={TAG_SUGGESTION_LIMIT}
           placeholder={t("modaltag.placeholder")}
           splitChars={[","]}
+          // iOS would capitalize the first letter, and "Beach" is a different tag from "beach".
+          autoCapitalize="none"
           clearable
           // Enter already commits the tag being typed; only submit once the
           // input is empty, so a trailing Enter does not fire the dialog while

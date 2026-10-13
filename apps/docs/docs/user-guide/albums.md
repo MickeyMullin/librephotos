@@ -127,7 +127,7 @@ Public albums are accessible at `/public/s/{slug}` and include a lightbox viewer
 
 ## Tagging photos
 
-Tags are yours to type: a place name, a project, "to print", whatever you sort by. A photo can carry any number of them.
+Tags are yours to type: a place name, a project, "to print", whatever you sort by. A photo can carry any number of them. Capitals count, so `Beach` and `beach` are two different tags. On a phone, the tag and keyword boxes keep the keyboard from capitalizing the first letter, which it otherwise does at the start of a box; this is not in a release yet.
 
 ### Tagging a selection
 
