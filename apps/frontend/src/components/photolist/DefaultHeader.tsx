@@ -81,42 +81,38 @@ export function DefaultHeader(props: Props) {
   const isScanView = () => location.pathname === "/";
 
   function getPhotoCounter() {
-    // The subheader stays while loading and when nothing is found: it can hold
-    // the very controls that change what is shown (the tag search's pickers,
-    // the timeline's filter summary).
+    let status: React.ReactNode;
     if (loading) {
-      return (
-        <div>
-          <Text ta="left" c="dimmed">
-            {t("defaultheader.loading")}
-            <Loader size={20} />
-          </Text>
-          {additionalSubHeader}
-        </div>
+      status = (
+        <Text ta="left" c="dimmed">
+          {t("defaultheader.loading")}
+          <Loader size={20} />
+        </Text>
       );
-    }
-
-    if (numPhotosetItems < 1) {
+    } else if (numPhotosetItems < 1) {
       // Don't show "No images found" if an EmptyState will be displayed below
-      if (hasEmptyState) {
-        return additionalSubHeader ?? null;
-      }
-      return (
-        <div>
-          <Text ta="left" c="dimmed">
-            {t("defaultheader.noimages")}
-          </Text>
-          {additionalSubHeader}
-        </div>
+      status = hasEmptyState ? null : (
+        <Text ta="left" c="dimmed">
+          {t("defaultheader.noimages")}
+        </Text>
       );
-    }
-
-    return (
-      <div>
+    } else {
+      status = (
         <Text ta="left" c="dimmed">
           {numPhotosetItems !== numPhotos ? `${numPhotosetItems} ${t("defaultheader.days")}, ` : ""}
           {numPhotos} {t("defaultheader.photos")}
         </Text>
+      );
+    }
+
+    // The subheader stays while loading and when nothing is found: it can hold
+    // the very controls that change what is shown (the tag search's pickers,
+    // the timeline's filter summary). It keeps one place in the tree in every
+    // state, so those controls are not remounted, and do not lose focus, when
+    // the results go from empty to loading to found.
+    return (
+      <div>
+        {status}
         {additionalSubHeader}
       </div>
     );
