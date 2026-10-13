@@ -40,18 +40,24 @@ def _tag_ids(raw):
     return list(dict.fromkeys(ids))
 
 
-def photos_with_tags(user, tag_ids, match="all", exclude_ids=()):
+def photos_with_tags(user, tag_ids, match="all", exclude_ids=(), tagged=False):
     """``user``'s visible photos carrying ``tag_ids``, minus ``exclude_ids``.
 
     ``match="all"`` wants every tag on the same photo; ``"any"`` wants at least
     one. Only the user's own tags count. With ``all``, an id that is not one of
     them (a deleted tag in a bookmarked search) matches nothing rather than
-    being dropped, which would quietly widen the search. No tags at all, and no
-    exclusions either, is an empty search, not the whole library.
+    being dropped, which would quietly widen the search. ``tagged`` (the
+    search's ``*``) keeps only photos carrying at least one of the user's tags,
+    on top of the rest: on its own it is every tagged photo, and with
+    exclusions every tagged photo without them. No tags, no ``tagged`` and no
+    exclusions is an empty search, not the whole library.
     """
     wanted = list(Tag.objects.filter(owner=user, pk__in=tag_ids))
     excluded = list(Tag.objects.filter(owner=user, pk__in=exclude_ids))
     photos = Photo.visible.owned_by(user)
+
+    if tagged:
+        photos = photos.filter(tags__owner=user).distinct()
 
     if wanted:
         if match == "any":
@@ -62,7 +68,7 @@ def photos_with_tags(user, tag_ids, match="all", exclude_ids=()):
             # One join per tag: each filter() call matches its own tag row.
             for tag in wanted:
                 photos = photos.filter(tags=tag)
-    elif tag_ids or not excluded:
+    elif tag_ids or not (excluded or tagged):
         photos = photos.none()
 
     if excluded:
@@ -240,24 +246,32 @@ class TagViewSet(viewsets.ModelViewSet):
                 OpenApiTypes.STR,
                 description="Comma-separated ids of tags the photos must not carry.",
             ),
+            OpenApiParameter(
+                "tagged",
+                OpenApiTypes.BOOL,
+                description="Only photos carrying at least one of the user's tags.",
+            ),
             OpenApiParameter("video", OpenApiTypes.BOOL),
             OpenApiParameter("photo", OpenApiTypes.BOOL),
         ],
         description=(
             "Search by tags: the requesting user's photos carrying all (or, with "
             "match=any, any) of the given tags and none of the excluded ones, "
-            "grouped by date like a tag album."
+            "grouped by date like a tag album. tagged=true also keeps only "
+            "photos with at least one tag, and works on its own."
         ),
     )
     @action(detail=False, methods=["get"], url_path="photos")
     def photos(self, request):
         params = request.query_params
         match = "any" if params.get("match") == "any" else "all"
+        tagged = str(params.get("tagged", "")).lower() in ("1", "true")
         photos, wanted, excluded = photos_with_tags(
             request.user,
             _tag_ids(params.get("tags")),
             match,
             _tag_ids(params.get("exclude")),
+            tagged,
         )
         photos = filter_photos_by_media_type(
             _with_photo_summary_relations(photos.order_by("-exif_timestamp")),
@@ -268,6 +282,7 @@ class TagViewSet(viewsets.ModelViewSet):
             {
                 "results": {
                     "match": match,
+                    "tagged": tagged,
                     "tags": [{"id": tag.id, "name": tag.name} for tag in wanted],
                     "excluded": [{"id": tag.id, "name": tag.name} for tag in excluded],
                     "grouped_photos": GroupedPhotosSerializer(grouped, many=True).data,

@@ -1584,10 +1584,11 @@
     "match": "Match",
     "all": "All tags",
     "any": "Any tag",
+    "anytag": "any tag: photos with at least one",
     "notag": "No tag by that name",
     "start": {
       "title": "Pick tags to search for",
-      "description": "Choose one or more tags. With several, show photos that carry all of them or any of them, and leave out photos with tags you choose under Without."
+      "description": "Choose one or more tags, or * for any tag. With several, show photos that carry all of them or any of them, and leave out photos with tags you choose under Without. * with tags under Without finds tagged photos that are missing those tags."
     },
     "nomatch": {
       "title": "No photos match",

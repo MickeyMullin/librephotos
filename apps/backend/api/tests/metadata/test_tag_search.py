@@ -3,6 +3,8 @@
 * all: every tag on the same photo; any: at least one,
 * exclude takes photos out, and works on its own,
 * only the user's own tags and photos; hidden and trashed photos stay out,
+* tagged (the page's "*") keeps only photos with at least one of the
+  user's tags, alone or with the rest,
 * an empty search is empty, and a deleted tag in an "all" search matches
   nothing instead of widening it.
 """
@@ -81,6 +83,40 @@ class TagSearchTest(TestCase):
             self._hashes(results),
             {self.dog_night.image_hash, self.untagged.image_hash},
         )
+
+    def test_tagged_alone_is_every_tagged_photo(self):
+        results = self._search(tagged="true")
+        self.assertTrue(results["tagged"])
+        self.assertEqual(
+            self._hashes(results),
+            {
+                self.beach_dog.image_hash,
+                self.beach_only.image_hash,
+                self.dog_night.image_hash,
+            },
+        )
+        items = [i for g in results["grouped_photos"] for i in g["items"]]
+        self.assertEqual(len(items), 3)
+
+    def test_tagged_with_exclude_is_tagged_photos_missing_a_tag(self):
+        # Unlike exclude alone, the untagged photo stays out.
+        results = self._search(tagged="true", exclude=str(self.beach.id))
+        self.assertEqual(self._hashes(results), {self.dog_night.image_hash})
+
+    def test_tagged_narrows_the_other_tags_too(self):
+        results = self._search(tagged="true", tags=str(self.dog.id))
+        self.assertEqual(
+            self._hashes(results),
+            {self.beach_dog.image_hash, self.dog_night.image_hash},
+        )
+        self.assertFalse(self._search(tags=str(self.dog.id))["tagged"])
+
+    def test_tagged_counts_only_the_users_own_tags(self):
+        other = create_test_user()
+        theirs = Tag.objects.create(name="seen", owner=other)
+        theirs.photos.add(self.untagged)
+        results = self._search(tagged="true")
+        self.assertNotIn(self.untagged.image_hash, self._hashes(results))
 
     def test_an_empty_search_is_empty(self):
         self.assertEqual(self._hashes(self._search()), set())

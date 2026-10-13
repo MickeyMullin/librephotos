@@ -158,9 +158,9 @@ Searching by tags is not in a release yet; it ships with the first release after
 
 To find photos by their tags, open **Tags → View all** and click **Search by tags**, or click the tags icon at the top of any tag's page to start from that tag.
 
-- **Photos with these tags**: pick one or more tags. Names that start with what you type are offered first.
+- **Photos with these tags**: pick one or more tags. Names that start with what you type are offered first. The first suggestion, `*`, stands for any tag: it keeps only photos that carry at least one tag, on top of whatever else you pick. This option is not in a release yet.
 - **All tags / Any tag**: appears once two tags are picked. **All tags** shows photos that carry every one of them; **Any tag** shows photos that carry at least one.
-- **Without these tags**: leaves out photos that carry any of these. It also works on its own, for example to see every photo that is not tagged `reviewed`.
+- **Without these tags**: leaves out photos that carry any of these. It also works on its own, for example to see every photo that is not tagged `reviewed`. On its own it includes photos with no tags at all; to see only tagged photos that are missing `reviewed`, pick `*` under **Photos with these tags** as well.
 
 In both boxes, a comma finishes the tag you are typing, as in the tag editor: type `dog,` and **dog** is added. The case does not matter, and a name you have only partly typed becomes the first suggestion, so `ni,` adds **night** if that is the top match. Pasting `beach, dog, night` adds all three. A name that matches no tag stays in the box for you to correct, since you can only search for tags that exist. Finishing a tag with a comma is not in a release yet either.
 

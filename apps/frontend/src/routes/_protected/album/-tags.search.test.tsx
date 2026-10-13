@@ -103,6 +103,9 @@ describe("tag search URL", () => {
     });
     // "all" is the default and stays out of the URL.
     expect(validateTagSearch({ tags: "1", match: "all" })).toEqual({ tags: "1" });
+    // "*" (any tag) survives, first, once.
+    expect(validateTagSearch({ tags: "3,*,x,*" })).toEqual({ tags: "*,3" });
+    expect(validateTagSearch({ tags: "*" })).toEqual({ tags: "*" });
   });
 });
 
@@ -110,7 +113,10 @@ describe("tag search page", () => {
   it("searches for what the URL holds", async () => {
     stubs.search = { tags: "1,2", match: "any", exclude: "3" };
     await render();
-    expect(stubs.searchQuery).toHaveBeenLastCalledWith({ tags: [1, 2], match: "any", exclude: [3] }, "all");
+    expect(stubs.searchQuery).toHaveBeenLastCalledWith(
+      { tags: [1, 2], match: "any", exclude: [3], tagged: false },
+      "all"
+    );
   });
 
   it("offers All/Any only once two tags are picked", async () => {
@@ -197,5 +203,28 @@ describe("finishing a tag with a comma", () => {
     await type(input, "cat,");
     expect(stubs.navigate).not.toHaveBeenCalled();
     expect(input.value).toBe("cat");
+  });
+});
+
+describe("any tag (*)", () => {
+  it("searches for tagged photos without the excluded ones", async () => {
+    stubs.search = { tags: "*", exclude: "1" };
+    const container = await render();
+    expect(stubs.searchQuery).toHaveBeenLastCalledWith({ tags: [], match: "all", exclude: [1], tagged: true }, "all");
+    expect(container.textContent).toContain("*");
+  });
+
+  it("is added with a comma like a tag, and kept in front of the others in the URL", async () => {
+    stubs.search = { tags: "2" };
+    const container = await render();
+    await type(box(container, "Photos with these tags"), "*,");
+    const { search } = stubs.navigate.mock.calls[0][0];
+    expect(search({})).toMatchObject({ tags: "*,2" });
+  });
+
+  it("is not offered under Without", async () => {
+    const container = await render();
+    await type(box(container, "Without these tags"), "*,");
+    expect(stubs.navigate).not.toHaveBeenCalled();
   });
 });

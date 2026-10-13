@@ -1,4 +1,4 @@
-import { Group, MultiSelect, SegmentedControl, type ComboboxItem, type MultiSelectProps } from "@mantine/core";
+import { Group, MultiSelect, SegmentedControl, Text, type ComboboxItem, type MultiSelectProps } from "@mantine/core";
 import { IconTags as Tags } from "@tabler/icons-react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import React, { useMemo, useState } from "react";
@@ -14,7 +14,7 @@ import { resolveTypedTag, TAG_SUGGESTION_LIMIT, tagOptionsFilter } from "../../.
 type TagSearchRouteSearch = {
   media?: MediaType;
   // Comma-separated tag ids. Ids rather than names, so a bookmark survives a
-  // rename.
+  // rename. A "*" among them stands for "any tag" (see ANY_TAG).
   tags?: string;
   exclude?: string;
   // "all" is the default and stays out of the URL.
@@ -29,11 +29,26 @@ export function parseTagIds(value: unknown): number[] {
   return Array.from(new Set(ids.map(Number)));
 }
 
+// "*" in "Photos with these tags": the photo carries at least one tag, on top
+// of whatever else is picked. On its own it is every tagged photo, and with
+// exclusions every tagged photo without them (which "Without" alone cannot
+// say: it keeps the untagged photos too).
+export const ANY_TAG = "*";
+
+export function parseAnyTag(value: unknown): boolean {
+  return typeof value === "string" && value.split(",").some(part => part.trim() === ANY_TAG);
+}
+
+function tagsParam(anyTag: boolean, ids: number[]) {
+  const parts = [...(anyTag ? [ANY_TAG] : []), ...ids.map(String)];
+  return parts.length ? parts.join(",") : undefined;
+}
+
 export function validateTagSearch(search: Record<string, unknown>): TagSearchRouteSearch {
   const result: TagSearchRouteSearch = { ...validateMediaSearch(search) };
-  const tags = parseTagIds(search.tags);
+  const tags = tagsParam(parseAnyTag(search.tags), parseTagIds(search.tags));
   const exclude = parseTagIds(search.exclude);
-  if (tags.length) result.tags = tags.join(",");
+  if (tags) result.tags = tags;
   if (exclude.length) result.exclude = exclude.join(",");
   if (search.match === "any") result.match = "any";
   return result;
@@ -108,24 +123,29 @@ function TagSearchPage() {
   const { data: allTags } = useFetchTagsQuery();
 
   const tags = useMemo(() => parseTagIds(search.tags), [search.tags]);
+  const anyTag = parseAnyTag(search.tags);
   const exclude = useMemo(() => parseTagIds(search.exclude), [search.exclude]);
   const match: TagMatch = search.match === "any" ? "any" : "all";
-  const searching = tags.length > 0 || exclude.length > 0;
+  const searching = tags.length > 0 || exclude.length > 0 || anyTag;
 
-  const { data, isFetching } = useFetchTagSearchQuery({ tags, match, exclude }, mediaType);
+  const { data, isFetching } = useFetchTagSearchQuery({ tags, match, exclude, tagged: anyTag }, mediaType);
 
   const options = useMemo(() => (allTags ?? []).map(tag => ({ value: String(tag.id), label: tag.name })), [allTags]);
-  // A tag picked on one side is not offered on the other.
-  const includeOptions = options.filter(option => !exclude.includes(Number(option.value)));
+  // A tag picked on one side is not offered on the other. "*" comes first,
+  // and only on the "with" side.
+  const includeOptions = [
+    { value: ANY_TAG, label: ANY_TAG },
+    ...options.filter(option => !exclude.includes(Number(option.value))),
+  ];
   const excludeOptions = options.filter(option => !tags.includes(Number(option.value)));
 
-  const update = (patch: Partial<{ tags: number[]; exclude: number[]; match: TagMatch }>) => {
-    const next = { tags, exclude, match, ...patch };
+  const update = (patch: Partial<{ tags: number[]; tagged: boolean; exclude: number[]; match: TagMatch }>) => {
+    const next = { tags, tagged: anyTag, exclude, match, ...patch };
     navigate({
       to: "/album/tags/search",
       search: prev => ({
         ...prev,
-        tags: next.tags.length ? next.tags.join(",") : undefined,
+        tags: tagsParam(next.tagged, next.tags),
         exclude: next.exclude.length ? next.exclude.join(",") : undefined,
         match: next.match === "any" ? ("any" as const) : undefined,
       }),
@@ -154,10 +174,28 @@ function TagSearchPage() {
     <Group gap="xs" mt={6} wrap="wrap" align="center" onClick={event => event.stopPropagation()}>
       <TagPicker
         aria-label={t("tagsearch.with")}
-        placeholder={tags.length ? undefined : t("tagsearch.with")}
+        placeholder={tags.length || anyTag ? undefined : t("tagsearch.with")}
         data={includeOptions}
-        value={tags.map(String)}
-        onChange={values => update({ tags: values.map(Number) })}
+        value={[...(anyTag ? [ANY_TAG] : []), ...tags.map(String)]}
+        onChange={values =>
+          update({
+            tagged: values.includes(ANY_TAG),
+            tags: values.filter(value => value !== ANY_TAG).map(Number),
+          })
+        }
+        // The pill shows just "*"; the suggestion says what it means.
+        renderOption={({ option }) =>
+          option.value === ANY_TAG ? (
+            <Group gap="xs" wrap="nowrap">
+              <Text size="sm">{ANY_TAG}</Text>
+              <Text size="xs" c="dimmed">
+                {t("tagsearch.anytag")}
+              </Text>
+            </Group>
+          ) : (
+            option.label
+          )
+        }
         nothingFoundMessage={t("tagsearch.notag")}
         w={{ base: "100%", sm: 320 }}
       />

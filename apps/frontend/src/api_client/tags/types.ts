@@ -42,6 +42,9 @@ const TagRef = z.object({ id: z.number(), name: z.string() });
 // exist come back.
 const TagSearch = z.object({
   match: z.enum(["all", "any"]),
+  // Only photos with at least one tag (the page's "*"). Optional: an older
+  // server does not send it.
+  tagged: z.boolean().optional(),
   tags: TagRef.array(),
   excluded: TagRef.array(),
   grouped_photos: DatePhotosGroup.array(),
@@ -57,6 +60,8 @@ export type TagSearchParams = {
   tags: number[];
   match: TagMatch;
   exclude: number[];
+  /** Only photos carrying at least one tag. */
+  tagged?: boolean;
 };
 
 export type CreateTagParams = {
