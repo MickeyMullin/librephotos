@@ -1,7 +1,8 @@
 import { ActionIcon, Badge, Group, Stack, TagsInput, Text, Title, Tooltip } from "@mantine/core";
 import { IconCheck, IconPencil, IconX } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { Photo as PhotoType } from "../../api_client/photos/types";
 import {
@@ -26,6 +27,7 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
   // What is typed but not yet a tag: Enter turns that into a tag, and only
   // saves once there is nothing left to turn.
   const [typed, setTyped] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: photoTags } = useFetchPhotoTagsQuery(photoDetail.id);
   const { data: allTags } = useFetchTagsQuery();
@@ -37,8 +39,14 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
   const isSaving = isAdding || isRemoving;
 
   const handleEditOpen = () => {
-    setDraftTags(tags.map(tag => tag.name));
-    setEditing(true);
+    // Rendered and focused within the tap itself: iOS only opens the
+    // keyboard for a focus that happens inside a user gesture, which
+    // autoFocus on the newly mounted input would not be.
+    flushSync(() => {
+      setDraftTags(tags.map(tag => tag.name));
+      setEditing(true);
+    });
+    inputRef.current?.focus();
   };
 
   const handleCancel = () => {
@@ -108,6 +116,7 @@ export function TagsSection({ photoDetail }: TagsSectionProps) {
 
       {editing ? (
         <TagsInput
+          ref={inputRef}
           value={draftTags}
           onChange={setDraftTags}
           searchValue={typed}

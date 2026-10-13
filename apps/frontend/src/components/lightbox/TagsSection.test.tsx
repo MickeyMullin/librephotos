@@ -99,6 +99,13 @@ async function press(container: HTMLElement, key: string, code = key) {
   });
 }
 
+describe("opening the tag editor", () => {
+  it("puts the cursor in the tag box", async () => {
+    const container = await openEditor();
+    expect(document.activeElement).toBe(input(container));
+  });
+});
+
 describe("Enter in the tag editor", () => {
   it("turns a typed name into a tag first, then saves on the next Enter", async () => {
     const container = await openEditor();
