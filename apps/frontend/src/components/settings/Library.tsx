@@ -246,11 +246,11 @@ export function Library() {
               )}
               <Modal opened={isOpen} title={t("settings.missingphotosbutton")} onClose={close}>
                 <Stack gap="xl">
-                  This action will delete all missing photos and it&apos;s metadata from the database.
+                  {t("settings.missingphotosconfirm", { count: countStats.num_missing_photos })}
                   <Group>
-                    <Button onClick={close}>Cancel</Button>
+                    <Button onClick={close}>{t("cancel")}</Button>
                     <Button color="red" onClick={onDeleteMissingPhotosButtonClick}>
-                      Confirm
+                      {t("confirm")}
                     </Button>
                   </Group>
                 </Stack>

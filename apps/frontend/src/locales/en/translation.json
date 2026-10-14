@@ -106,6 +106,8 @@
     "rescanphotosdescription": "Rescan all files",
     "missingphotos": "Missing Photos",
     "missingphotosbutton": "Remove missing photos",
+    "missingphotosconfirm_one": "This action will delete the missing photo and its metadata from the database.",
+    "missingphotosconfirm_other": "This action will delete all missing photos and their metadata from the database.",
     "missingphotosdescription": "On every scan LibrePhotos will check if the files are still in the same location or if they have been moved. If they are missing, then they get marked as such.",
     "eventsalbums": "Event Albums",
     "eventalbumsgenerate": "Generate Event Albums",
