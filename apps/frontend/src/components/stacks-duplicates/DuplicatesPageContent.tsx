@@ -20,9 +20,11 @@ import {
   Modal,
   Pagination,
   Paper,
+  Radio,
   ScrollArea,
   SegmentedControl,
   SimpleGrid,
+  Spoiler,
   Stack,
   Text,
   Title,
@@ -212,6 +214,33 @@ function DuplicatePhotoCard({
           </Badge>
         )}
 
+        {/* What the user gave this copy, to tell the copies apart by. */}
+        {photo.caption !== undefined && (
+          <Spoiler
+            maxHeight={60}
+            showLabel={t("duplicates.showmore", "Show more")}
+            hideLabel={t("duplicates.showless", "Show less")}
+          >
+            <Text size="xs" c={photo.caption ? undefined : "dimmed"} style={{ whiteSpace: "pre-wrap" }}>
+              {photo.caption || t("duplicates.nocaption", "No caption")}
+            </Text>
+          </Spoiler>
+        )}
+        {photo.tags !== undefined &&
+          (photo.tags.length > 0 ? (
+            <Group gap={4}>
+              {photo.tags.map(tag => (
+                <Badge key={tag.id} size="xs" color="teal" variant="light">
+                  {tag.name}
+                </Badge>
+              ))}
+            </Group>
+          ) : (
+            <Text size="xs" c="dimmed">
+              {t("duplicates.notags", "No tags")}
+            </Text>
+          ))}
+
         {showSelectButton && (
           <Button
             variant={isSelected ? "filled" : "outline"}
@@ -230,7 +259,7 @@ function DuplicatePhotoCard({
   );
 }
 
-function DuplicateModal({
+export function DuplicateModal({
   duplicateId,
   opened,
   onClose,
@@ -241,6 +270,8 @@ function DuplicateModal({
 }) {
   const { t } = useTranslation();
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  // Whose caption the kept photo gets: "" joins them all (the default).
+  const [captionFrom, setCaptionFrom] = useState("");
   // The photo's id, which is what idx2hash below is keyed on.
   const [lightboxImageId, setLightboxImageId] = useState<string | null>(null);
   const [lightboxOpened, { open: openLightbox, close: closeLightbox }] = useDisclosure(false);
@@ -268,7 +299,12 @@ function DuplicateModal({
   const handleResolve = () => {
     if (selectedPhoto) {
       resolveDuplicate(
-        { id: duplicateId, keep_photo_hash: selectedPhoto, trash_others: true },
+        {
+          id: duplicateId,
+          keep_photo_hash: selectedPhoto,
+          trash_others: true,
+          caption_from: captionFrom || undefined,
+        },
         {
           onSuccess: () => {
             onClose();
@@ -316,6 +352,21 @@ function DuplicateModal({
       setSelectedPhoto(best.image_hash);
     }
   }, [duplicate, selectedPhoto]);
+
+  // One choice per different caption, offered once the copies disagree;
+  // each points at the first copy that has it.
+  const captionChoices = React.useMemo(() => {
+    const seen = new Map<string, DuplicatePhoto>();
+    (duplicate?.photos ?? []).forEach(photo => {
+      const caption = photo.caption?.trim();
+      if (caption && !seen.has(caption)) seen.set(caption, photo);
+    });
+    return Array.from(seen, ([caption, photo]) => ({ caption, photo }));
+  }, [duplicate?.photos]);
+
+  useEffect(() => {
+    setCaptionFrom("");
+  }, [duplicateId]);
 
   const getDuplicateDescription = () => {
     if (!duplicate) return "";
@@ -413,6 +464,35 @@ function DuplicateModal({
                 ))}
               </SimpleGrid>
             </ScrollArea>
+
+            {!isReviewed && (
+              <Text size="sm" c="dimmed">
+                {t("duplicates.mergeinfo", "The photo you keep also gets every copy's tags, albums and best rating.")}
+              </Text>
+            )}
+
+            {!isReviewed && captionChoices.length > 1 && (
+              <Radio.Group
+                label={t("duplicates.captionchoice", "Caption for the photo you keep")}
+                value={captionFrom}
+                onChange={setCaptionFrom}
+              >
+                <Stack gap={6} mt={6}>
+                  <Radio value="" label={t("duplicates.captioncombine", "All of them, one after another")} />
+                  {captionChoices.map(({ caption, photo }) => (
+                    <Radio
+                      key={photo.image_hash}
+                      value={photo.image_hash}
+                      label={
+                        <Text size="sm" lineClamp={2} style={{ whiteSpace: "pre-wrap" }}>
+                          {caption}
+                        </Text>
+                      }
+                    />
+                  ))}
+                </Stack>
+              </Radio.Group>
+            )}
 
             <Divider my="md" />
 

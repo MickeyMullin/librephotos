@@ -169,19 +169,25 @@ class Duplicate(models.Model):
         self.save(update_fields=["potential_savings", "updated_at"])
         return self.potential_savings
 
-    def resolve(self, kept_photo, trash_others: bool = True):
+    def resolve(self, kept_photo, trash_others: bool = True, caption_from=None):
         """
         Mark the duplicate as resolved by selecting a photo to keep.
 
         Args:
             kept_photo: The Photo instance to keep
             trash_others: Whether to move other photos to trash
+            caption_from: A photo of the group whose caption the kept one
+                takes, instead of every copy's caption joined
         """
         # What the user attached to the other copies goes to the one that
         # stays, before they are trashed.
         from api.duplicate_merge import merge_into_kept
 
-        merge_into_kept(kept_photo, list(self.photos.exclude(pk=kept_photo.pk)))
+        merge_into_kept(
+            kept_photo,
+            list(self.photos.exclude(pk=kept_photo.pk)),
+            caption_from=caption_from,
+        )
 
         # Set the kept photo
         self.kept_photo = kept_photo

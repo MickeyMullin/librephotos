@@ -28,11 +28,11 @@ class ResolveMergesAttributesTest(TestCase):
         )
         self.duplicate.photos.add(self.kept, self.copy, self.other_copy)
 
-    def _resolve(self):
+    def _resolve(self, **extra):
         with patch("api.duplicate_merge.queue_rating_write") as queue:
             response = self.client.post(
                 f"/api/duplicates/{self.duplicate.id}/resolve/",
-                {"keep_photo_hash": self.kept.image_hash},
+                {"keep_photo_hash": self.kept.image_hash, **extra},
             )
         self.assertEqual(response.status_code, 200, response.content)
         self.kept.refresh_from_db()
@@ -102,6 +102,60 @@ class ResolveMergesAttributesTest(TestCase):
         self._resolve()
         caption = PhotoCaption.objects.get(photo=self.kept).captions_json
         self.assertEqual(caption["user_caption"], "Summer")
+
+    def test_a_picked_caption_replaces_the_kept_one(self):
+        PhotoCaption.objects.create(
+            photo=self.kept, captions_json={"user_caption": "At the lake"}
+        )
+        PhotoCaption.objects.create(
+            photo=self.copy, captions_json={"user_caption": "Summer #trip"}
+        )
+        self._resolve(caption_from=self.copy.image_hash)
+        caption = PhotoCaption.objects.get(photo=self.kept).captions_json
+        self.assertEqual(caption["user_caption"], "Summer #trip")
+
+    def test_picking_the_kept_caption_keeps_it_alone(self):
+        PhotoCaption.objects.create(
+            photo=self.kept, captions_json={"user_caption": "At the lake"}
+        )
+        PhotoCaption.objects.create(
+            photo=self.copy, captions_json={"user_caption": "Summer"}
+        )
+        self._resolve(caption_from=self.kept.image_hash)
+        caption = PhotoCaption.objects.get(photo=self.kept).captions_json
+        self.assertEqual(caption["user_caption"], "At the lake")
+
+    def test_a_caption_from_outside_the_group_is_refused(self):
+        stranger = create_test_photo(owner=self.user)
+        response = self.client.post(
+            f"/api/duplicates/{self.duplicate.id}/resolve/",
+            {
+                "keep_photo_hash": self.kept.image_hash,
+                "caption_from": stranger.image_hash,
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.duplicate.refresh_from_db()
+        self.assertEqual(self.duplicate.review_status, "pending")
+
+    def test_the_detail_shows_each_copys_caption_and_own_tags(self):
+        PhotoCaption.objects.create(
+            photo=self.copy, captions_json={"user_caption": " Summer "}
+        )
+        beach = Tag.objects.create(name="beach", owner=self.user)
+        beach.photos.add(self.copy)
+        theirs = Tag.objects.create(name="secret", owner=create_test_user())
+        theirs.photos.add(self.copy)
+
+        response = self.client.get(f"/api/duplicates/{self.duplicate.id}/")
+        self.assertEqual(response.status_code, 200, response.content)
+        photos = {p["image_hash"]: p for p in response.json()["photos"]}
+        self.assertEqual(photos[self.copy.image_hash]["caption"], "Summer")
+        self.assertEqual(
+            photos[self.copy.image_hash]["tags"], [{"id": beach.id, "name": "beach"}]
+        )
+        self.assertEqual(photos[self.kept.image_hash]["caption"], "")
+        self.assertEqual(photos[self.kept.image_hash]["tags"], [])
 
     def test_dismissed_auto_tags_stay_dismissed(self):
         PhotoCaption.objects.create(

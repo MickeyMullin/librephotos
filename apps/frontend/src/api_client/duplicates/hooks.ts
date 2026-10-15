@@ -76,12 +76,18 @@ export const useResolveDuplicateMutation = () => {
       id,
       keep_photo_hash,
       trash_others,
+      caption_from,
     }: {
       id: string;
       keep_photo_hash: string;
       trash_others: boolean;
+      caption_from?: string;
     }) => {
-      const data: ResolveDuplicateRequest = { keep_photo_hash, trash_others };
+      const data: ResolveDuplicateRequest = {
+        keep_photo_hash,
+        trash_others,
+        ...(caption_from ? { caption_from } : {}),
+      };
       return fetchClient.post<ResolveDuplicateResponse>(`/duplicates/${id}/resolve`, data);
     },
     onSuccess: () => {

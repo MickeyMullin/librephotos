@@ -12,11 +12,13 @@ receives all of it first:
   for the one that leaves,
 * rating: the highest, so a favorite stays a favorite,
 * caption: the kept copy's, followed by each different caption of the others,
+  unless the user picked one copy's caption to keep instead,
 * dismissed auto tags: stay dismissed on the kept copy,
 * sharing: shared with everyone a copy was shared with, public if a copy was.
 
-It only ever adds: nothing the kept copy already had is taken away, and
-reverting the resolution leaves the additions in place.
+It only ever adds: nothing the kept copy already had is taken away (except
+its caption, when the user picks another copy's), and reverting the
+resolution leaves the additions in place.
 
 What the files say about themselves (date, place, camera) is not touched, and
 neither are faces: their boxes belong to each copy's own pixels.
@@ -33,7 +35,7 @@ from api.models.photo_caption import DISMISSED_TAGS_KEY, PhotoCaption
 logger = logging.getLogger(__name__)
 
 
-def _user_caption(photo):
+def user_caption(photo):
     caption = getattr(photo, "caption_instance", None)
     captions = (caption.captions_json if caption else None) or {}
     return (captions.get("user_caption") or "").strip()
@@ -45,8 +47,12 @@ def _dismissed_tags(photo):
     return captions.get(DISMISSED_TAGS_KEY) or []
 
 
-def merge_into_kept(kept, others):
-    """Give ``kept`` what the user attached to ``others``; return what was added."""
+def merge_into_kept(kept, others, caption_from=None):
+    """Give ``kept`` what the user attached to ``others``; return what was added.
+
+    ``caption_from``, one photo of the group, makes its caption the kept
+    copy's, in place of all the captions joined.
+    """
     others = list(
         Photo.objects.filter(pk__in=[photo.pk for photo in others])
         .exclude(pk=kept.pk)
@@ -97,13 +103,16 @@ def merge_into_kept(kept, others):
         added["public"] = True
 
     caption_instance, _ = PhotoCaption.objects.get_or_create(photo=kept)
-    kept_caption = _user_caption(kept)
-    captions = [kept_caption] if kept_caption else []
-    for photo in others:
-        caption = _user_caption(photo)
-        if caption and caption not in captions:
-            captions.append(caption)
-    merged_caption = "\n\n".join(captions)
+    kept_caption = user_caption(kept)
+    if caption_from is not None:
+        merged_caption = user_caption(caption_from)
+    else:
+        captions = [kept_caption] if kept_caption else []
+        for photo in others:
+            caption = user_caption(photo)
+            if caption and caption not in captions:
+                captions.append(caption)
+        merged_caption = "\n\n".join(captions)
     if merged_caption != kept_caption:
         caption_instance.apply_user_caption(merged_caption)
         added["caption"] = True

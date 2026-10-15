@@ -698,7 +698,14 @@
     "select": "Select",
     "notduplicates": "Not Duplicates",
     "keepandtrash": "Keep Selected & Trash Others",
-    "error": "Failed to load duplicate group"
+    "error": "Failed to load duplicate group",
+    "nocaption": "No caption",
+    "notags": "No tags",
+    "showmore": "Show more",
+    "showless": "Show less",
+    "mergeinfo": "The photo you keep also gets every copy's tags, albums and best rating.",
+    "captionchoice": "Caption for the photo you keep",
+    "captioncombine": "All of them, one after another"
   },
   "stacks": {
     "title": "Photo Stacks",

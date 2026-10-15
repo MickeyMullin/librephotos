@@ -22,6 +22,10 @@ export const DuplicatePhoto = z.object({
   file_path: z.string().nullable(),
   file_type: z.string().nullable(),
   is_kept: z.boolean(),
+  // The user's caption and tags on this copy. Optional: an older server
+  // does not send them.
+  caption: z.string().optional(),
+  tags: z.object({ id: z.number(), name: z.string() }).array().optional(),
 });
 export type DuplicatePhoto = z.infer<typeof DuplicatePhoto>;
 
@@ -105,6 +109,9 @@ export type DuplicateStats = z.infer<typeof DuplicateStats>;
 export const ResolveDuplicateRequest = z.object({
   keep_photo_hash: z.string(),
   trash_others: z.boolean().default(true),
+  // The copy whose caption the kept photo ends up with; without it every
+  // copy's caption is joined.
+  caption_from: z.string().optional(),
 });
 export type ResolveDuplicateRequest = z.infer<typeof ResolveDuplicateRequest>;
 

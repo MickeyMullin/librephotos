@@ -84,7 +84,7 @@ Dismissing a group unlinks its photos, which drops it below the two-photo minimu
 
 Click on a duplicate group to open the review modal:
 
-1. Each photo is shown with its **resolution**, **file size**, **camera**, **date**, and **file path**
+1. Each photo is shown with its **resolution**, **file size**, **camera**, **date**, **file path**, and the **caption** and **tags** you gave it ("No caption" and "No tags" when it has none; a long caption folds behind **Show more**)
 2. The highest-resolution photo is automatically pre-selected as the one to keep
 3. The pre-selected photo's button reads **"Keep This"**; every other photo shows a **"Select"** button. To keep a different photo, click its **"Select"** button — that photo's button then changes to **"Keep This"**
 4. Click **"Keep Selected & Trash Others"** — the other photos are moved to trash
@@ -92,14 +92,14 @@ Click on a duplicate group to open the review modal:
 
 The photo you keep takes over what you had given the others, so nothing you organized is lost with them:
 
-- **Tags**: all of them.
+- **Tags**: all of them, added to its own (tags are merged, never replaced).
 - **Albums**: it joins every one of your albums another copy was in, locked albums included, so the album keeps the picture.
 - **Rating**: the highest of the copies, so a favorite stays a favorite.
-- **Caption**: its own, followed by each different caption of the others.
+- **Caption**: by default its own, followed by each different caption of the others. When the copies have different captions, the dialog asks **Caption for the photo you keep**: leave it on **All of them, one after another**, or pick one caption, which then becomes the kept photo's only caption, replacing its own.
 - **Dismissed auto tags**: stay dismissed.
 - **Sharing**: it is shared with everyone a copy was shared with, and public if a copy was.
 
-This only ever adds to the kept photo, and **Revert & Restore Photos** does not take the additions away again. What the files say about themselves (date, place, camera) and recognized faces stay as they are on the kept photo. Carrying these over is not in a release yet; it ships with the first release after 1.2.1.
+This only ever adds to the kept photo (except its caption, when you pick another copy's), and **Revert & Restore Photos** does not take the additions away again, nor bring back a caption you replaced; the trashed copies keep their own captions. What the files say about themselves (date, place, camera) and recognized faces stay as they are on the kept photo. Carrying these over, showing captions and tags in the dialog, and picking a caption are not in a release yet; they ship with the first release after 1.2.1.
 
 #### Other Actions
 

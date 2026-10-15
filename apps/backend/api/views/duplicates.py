@@ -13,7 +13,7 @@ Duplicates are separate from Stacks because they have different purposes:
 import logging
 
 from django.core.paginator import Paginator
-from django.db.models import Count, Sum
+from django.db.models import Count, Prefetch, Sum
 from django_q.tasks import async_task
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -21,7 +21,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Photo
+from api.duplicate_merge import user_caption
+from api.models import Photo, Tag
 from api.models.duplicate import Duplicate
 
 logger = logging.getLogger(__name__)
@@ -147,9 +148,19 @@ class DuplicateDetailView(APIView):
                 {"error": "Duplicate group not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        photos = duplicate.photos.select_related(
-            "thumbnail", "main_file", "metadata"
-        ).all()
+        photos = (
+            duplicate.photos.select_related(
+                "thumbnail", "main_file", "metadata", "caption_instance"
+            )
+            .prefetch_related(
+                Prefetch(
+                    "tags",
+                    queryset=Tag.objects.filter(owner=request.user).order_by("name"),
+                    to_attr="own_tags",
+                )
+            )
+            .all()
+        )
 
         photo_data = []
         for p in photos:
@@ -174,6 +185,10 @@ class DuplicateDetailView(APIView):
                 and p.image_hash == duplicate.kept_photo.image_hash,
                 "file_path": p.main_file.path if p.main_file else None,
                 "file_type": p.main_file.get_type_display() if p.main_file else None,
+                # What the user attached, to compare the copies by and to pick
+                # whose caption the kept one gets.
+                "caption": user_caption(p),
+                "tags": [{"id": tag.id, "name": tag.name} for tag in p.own_tags],
                 "thumbnail_url": f"/media/square_thumbnails_small/{p.image_hash}"
                 if hasattr(p, "thumbnail") and p.thumbnail.square_thumbnail_small
                 else None,
@@ -224,6 +239,9 @@ class DuplicateResolveView(APIView):
 
         keep_photo_hash = request.data.get("keep_photo_hash")
         trash_others = request.data.get("trash_others", True)
+        # Whose caption the kept photo ends up with; without it every copy's
+        # caption is joined.
+        caption_from_hash = request.data.get("caption_from")
 
         if not keep_photo_hash:
             return Response(
@@ -240,8 +258,17 @@ class DuplicateResolveView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        caption_from = None
+        if caption_from_hash:
+            caption_from = duplicate.photos.filter(image_hash=caption_from_hash).first()
+            if caption_from is None:
+                return Response(
+                    {"error": "caption_from is not a photo in this duplicate group"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         # Resolve the duplicate
-        duplicate.resolve(keep_photo, trash_others)
+        duplicate.resolve(keep_photo, trash_others, caption_from=caption_from)
 
         logger.info(
             f"Resolved duplicate {duplicate.id}: kept {keep_photo_hash}, trashed {duplicate.trashed_count}"
