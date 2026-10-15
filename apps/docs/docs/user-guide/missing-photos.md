@@ -41,15 +41,17 @@ Common scenarios that cause missing photos:
 
 ## How to Identify Missing Photos
 
-LibrePhotos gives you two ways to spot missing photos:
+LibrePhotos gives you three ways to spot missing photos:
 
 ### Missing Photos Badge
 
-Click your avatar in the top-right corner and select **Library**. If any of your photos are missing, a red **"N Missing Photos"** badge appears next to the **Photos** heading; it is hidden when the count is zero. Hover over the badge to read a short explanation of how LibrePhotos marks photos as missing.
+Click your avatar in the top-right corner and select **Library**. If any of your photos are missing, a red **"N Missing Photos"** badge appears next to the **Photos** heading; it is hidden when the count is zero. Hover over the badge to read a short explanation of how LibrePhotos marks photos as missing, and click it to open the **Missing Photos** page.
 
-:::caution
-Clicking the badge opens the **Remove missing photos** confirmation dialog, which permanently deletes those photos from the database. Hover only, unless deletion is what you intend.
-:::
+### Missing Photos Page
+
+The **Missing Photos** page (`/missing`, reached from the badge) lists every missing photo by date, including the ones you have hidden or moved to the trash, which no other view shows together. Their thumbnails are still there, so you can open each one to see its date, tags, caption and people, and select them to tag, add to albums, hide or move to the trash like any other photo. The page also has the trash's **Restore** and **Delete permanently** buttons for the selection; deleting permanently only removes the selected photos that are already in the trash. To remove them all at once, use **Remove all missing photos** at the top of the page (see [Option 4](#option-4-delete-missing-photos)).
+
+Before this page, clicking the badge went straight to deleting every missing photo. The page is not in a release yet; it ships with the first release after 1.2.1.
 
 ### In the Photo Details View
 
@@ -96,9 +98,10 @@ To trigger automatic relinking:
 If you're certain the files are permanently gone:
 
 1. Open the **Library** page (avatar menu → **Library**)
-2. Next to the **Photos** heading, click the red **"N Missing Photos"** badge — it only appears when your library actually has missing photos
-3. In the **Remove missing photos** dialog, click **Confirm**
-4. This will permanently remove all missing photos from the database, including:
+2. Next to the **Photos** heading, click the red **"N Missing Photos"** badge — it only appears when your library actually has missing photos — to open the **Missing Photos** page
+3. Look through the list, then click **Remove all missing photos** at the top
+4. In the **Remove missing photos** dialog, click **Confirm**
+5. This will permanently remove all missing photos from the database, hidden and trashed ones included, along with:
    - Photo metadata and EXIF information
    - Thumbnails
    - Face detections

@@ -42,6 +42,14 @@ describe("buildDateAlbumFilterParams — photosetType", () => {
     });
   });
 
+  test("MISSING sets only missing: the server then lists hidden and trashed ones too", () => {
+    const params = buildDateAlbumFilterParams(Photoset.MISSING);
+    expect(params.missing).toBe("true");
+    expect(params.in_trashcan).toBeUndefined();
+    expect(params.hidden).toBeUndefined();
+    expect(buildDateAlbumFilterParams(Photoset.IN_TRASHCAN).missing).toBeUndefined();
+  });
+
   test("FAVORITES sets only favorite, leaving media flags untouched", () => {
     const params = buildDateAlbumFilterParams(Photoset.FAVORITES);
     expect(params.favorite).toBe("true");

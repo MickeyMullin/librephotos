@@ -8,7 +8,10 @@ import { z } from "zod";
  */
 export const UuidString = z
   .string()
-  .regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, "Invalid uuid");
+  .regex(
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    "Invalid uuid",
+  );
 
 export const SimpleUser = z.object({
   id: z.number(),
@@ -88,7 +91,9 @@ export const IncompleteDatePhotosGroup = DatePhotosGroup.extend({
   incomplete: z.boolean(),
   numberOfItems: z.number(),
 });
-export type IncompleteDatePhotosGroup = z.infer<typeof IncompleteDatePhotosGroup>;
+export type IncompleteDatePhotosGroup = z.infer<
+  typeof IncompleteDatePhotosGroup
+>;
 
 /** Which timeline surface / photoset a screen is showing. */
 export enum Photoset {
@@ -100,6 +105,8 @@ export enum Photoset {
   HIDDEN = "hidden",
   RECENTLY_ADDED = "recentlyAdded",
   IN_TRASHCAN = "in_trashcan",
+  /** Photos whose file is gone, hidden or not and in the trash or not. */
+  MISSING = "missing",
   SEARCH = "search",
   USER_ALBUM = "userAlbum",
   PERSON = "person",
@@ -111,7 +118,9 @@ export enum Photoset {
 }
 
 /** Extract the image hash from a PigPhoto (handles the `;`-delimited `url`). */
-export function imageHashOf(photo: Pick<PigPhoto, "image_hash" | "url">): string {
+export function imageHashOf(
+  photo: Pick<PigPhoto, "image_hash" | "url">,
+): string {
   if (photo.url) {
     const first = photo.url.split(";")[0];
     if (first) return first;

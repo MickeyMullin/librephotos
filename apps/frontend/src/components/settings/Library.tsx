@@ -14,7 +14,6 @@ import {
   List,
   Loader,
   Menu,
-  Modal,
   Space,
   Stack,
   Switch,
@@ -24,7 +23,6 @@ import {
   useComputedColorScheme,
   useMantineTheme,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
 import {
   IconBook as Book,
   IconBrandNextcloud as BrandNextcloud,
@@ -38,6 +36,7 @@ import {
   IconTextRecognition as TextRecognition,
   IconX as X,
 } from "@tabler/icons-react";
+import { Link } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { fetchClient } from "../../api_client/api";
@@ -53,7 +52,6 @@ import {
   useScanPhotosMutation,
   useWorkerQuery,
 } from "../../api_client/jobs/hooks";
-import { useDeleteMissingPhotosMutation } from "../../api_client/photos/hooks";
 import { useGetSettingsQuery } from "../../api_client/settings/hooks";
 import { useFetchCountStatsQuery } from "../../api_client/stats/hooks";
 import { COUNT_STATS_DEFAULTS } from "../../api_client/stats/types";
@@ -80,7 +78,6 @@ function BadgeIcon(details: User, isSuccess: boolean, isError: boolean, isFetchi
 }
 
 export function Library() {
-  const [isOpen, { open, close }] = useDisclosure(false);
   const [isOpenUpdateDialog, setIsOpenUpdateDialog] = useState(false);
   const [isOpenNextcloudHelp, setIsOpenNextcloudHelp] = useState(false);
   const [avatarImgSrc, setAvatarImgSrc] = useState("/unknown_user.jpg");
@@ -111,17 +108,11 @@ export function Library() {
   const scanPhotos = useScanPhotosMutation();
   const rescanPhotos = useRescanPhotosMutation();
   const scanNextcloudPhotos = useScanNextcloudPhotosMutation();
-  const deleteMissingPhotos = useDeleteMissingPhotosMutation();
   const trainFaces = useTrainFacesMutation();
   const generateOcr = useGenerateOcrMutation();
 
   const onGenerateEventAlbumsButtonClick = () => {
     generateAutoAlbums();
-  };
-
-  const onDeleteMissingPhotosButtonClick = () => {
-    deleteMissingPhotos.mutate();
-    close();
   };
 
   const guardScan = (run: () => void) => {
@@ -233,7 +224,8 @@ export function Library() {
               {countStats.num_missing_photos > 0 && (
                 <HoverCard width={280} shadow="md">
                   <HoverCard.Target>
-                    <Badge onClick={open} color="red" ml={10}>
+                    {/* Leads to the list of them; removing them all is a button there. */}
+                    <Badge component={Link} to="/missing" color="red" ml={10} style={{ cursor: "pointer" }}>
                       {countStats.num_missing_photos} <Trans i18nKey="settings.missingphotos">Missing photos</Trans>
                     </Badge>
                   </HoverCard.Target>
@@ -244,17 +236,6 @@ export function Library() {
                   </HoverCard.Dropdown>
                 </HoverCard>
               )}
-              <Modal opened={isOpen} title={t("settings.missingphotosbutton")} onClose={close}>
-                <Stack gap="xl">
-                  {t("settings.missingphotosconfirm", { count: countStats.num_missing_photos })}
-                  <Group>
-                    <Button onClick={close}>{t("cancel")}</Button>
-                    <Button color="red" onClick={onDeleteMissingPhotosButtonClick}>
-                      {t("confirm")}
-                    </Button>
-                  </Group>
-                </Stack>
-              </Modal>
             </Title>
 
             {/*

@@ -100,6 +100,7 @@ export type DateAlbumFilterParams = {
   public?: "true";
   hidden?: "true";
   in_trashcan?: "true";
+  missing?: "true";
   photo?: "true";
   video?: "true";
   is_screenshot?: "true";
@@ -116,6 +117,7 @@ export function buildDateAlbumFilterParams(photosetType: Photoset, mediaType?: M
     public: Photoset.PUBLIC === photosetType ? "true" : undefined,
     hidden: Photoset.HIDDEN === photosetType ? "true" : undefined,
     in_trashcan: Photoset.IN_TRASHCAN === photosetType ? "true" : undefined,
+    missing: Photoset.MISSING === photosetType ? "true" : undefined,
     photo: Photoset.PHOTOS === photosetType || mediaType === "photos" ? "true" : undefined,
     video: Photoset.VIDEOS === photosetType || mediaType === "videos" ? "true" : undefined,
     is_screenshot: Photoset.SCREENSHOTS === photosetType || mediaType === "screenshots" ? "true" : undefined,

@@ -12,6 +12,18 @@ from api.timeline_filter import timeline_filter_q
 from api.util import folder_path_q
 
 
+def missing_photo_q(prefix=""):
+    """Photos whose file is gone.
+
+    The scan's missing-file check unlinks a file it cannot find, so a missing
+    photo is one with no file left (see ``num_missing_photos`` in api/stats.py
+    and ``delete_missing_photos`` in api/autoalbum.py, which this matches so
+    the list, the Library page's count and "Remove missing photos" agree). It
+    keeps its thumbnails, tags and captions, but no filename or folder.
+    """
+    return Q(**{f"{prefix}files": None}) | Q(**{f"{prefix}main_file": None})
+
+
 def build_photo_queryset(user, params: dict):
     """The user's own photos matching a select_all ``query`` payload.
 
@@ -27,6 +39,8 @@ def build_photo_queryset(user, params: dict):
             - public: bool - Only the user's photos that are marked public
             - hidden: bool - Filter by hidden photos
             - in_trashcan: bool - Filter by trashed photos
+            - missing: bool - Only photos whose file is gone, hidden or not
+              and in the trash or not unless hidden / in_trashcan say so
             - media, video, photo, is_screenshot, is_document,
               hide_screenshots, hide_documents, favorite, untagged,
               apply_default -
@@ -49,16 +63,23 @@ def build_photo_queryset(user, params: dict):
     if params.get("public"):
         filters.append(Q(public=True))
 
+    # Missing photos are listed wherever they are: hidden or not, in the
+    # trash or not, unless the caller narrows that down (permanent deletion
+    # forces in_trashcan, so it only ever takes trashed ones).
+    missing = bool(params.get("missing"))
+    if missing:
+        filters.append(missing_photo_q())
+
     # Hidden filter
     if params.get("hidden"):
         filters.append(Q(hidden=True))
-    else:
+    elif not missing:
         filters.append(Q(hidden=False))
 
     # Trashcan filter
     if params.get("in_trashcan"):
         filters.append(Q(in_trashcan=True) & Q(removed=False))
-    else:
+    elif not missing:
         filters.append(Q(in_trashcan=False))
 
     # Person/face filter

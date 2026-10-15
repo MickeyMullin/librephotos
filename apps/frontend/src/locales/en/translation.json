@@ -1603,5 +1603,13 @@
       "title": "No photos match",
       "description": "No photo carries this combination of tags. Remove a tag, or switch to Any tag."
     }
+  },
+  "missingphotos": {
+    "explanation": "These photos' files could no longer be found at the last full scan. They keep their thumbnails, tags and captions, but not their filename or folder. Put the file back and scan to reconnect a photo, or remove the photos here. Delete permanently only removes the ones already in the trash.",
+    "removeall": "Remove all missing photos",
+    "empty": {
+      "title": "No missing photos",
+      "description": "Every photo's file was found at the last full scan."
+    }
   }
 }

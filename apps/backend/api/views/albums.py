@@ -47,6 +47,7 @@ from api.serializers.photos import PhotoSummarySerializer
 from api.timeline_filter import timeline_filter_q
 from api.util import folder_path_q
 from api.views.custom_api_view import ListViewSet
+from api.views.photo_filters import missing_photo_q
 from api.views.pagination import (
     RegularResultsSetPagination,
     StandardResultsSetPagination,
@@ -486,6 +487,12 @@ DATE_ALBUM_FILTER_PARAMETERS = [
     OpenApiParameter("public", OpenApiTypes.BOOL),
     OpenApiParameter("in_trashcan", OpenApiTypes.BOOL),
     OpenApiParameter("hidden", OpenApiTypes.BOOL),
+    OpenApiParameter(
+        "missing",
+        OpenApiTypes.BOOL,
+        description="Only photos whose file is gone, hidden or not and in the "
+        "trash or not.",
+    ),
     OpenApiParameter("video", OpenApiTypes.BOOL),
     OpenApiParameter("photo", OpenApiTypes.BOOL),
     OpenApiParameter("is_screenshot", OpenApiTypes.BOOL),
@@ -530,13 +537,17 @@ class AlbumDateViewSet(viewsets.ModelViewSet):
     def _media_flag_filters(self):
         params = self.request.query_params
 
-        filters = [Q(hidden=bool(params.get("hidden")))]
+        # Missing photos are listed hidden or not, trashed or not.
+        missing = bool(params.get("missing"))
+        filters = [missing_photo_q()] if missing else []
+        if params.get("hidden") or not missing:
+            filters.append(Q(hidden=bool(params.get("hidden"))))
         # Media type, screenshots, documents, favorites and untagged: resolved exactly as
         # AlbumDateListViewSet does, so a day's pages match its count there.
         filters += timeline_filter_q(self.request.user, params)
         if params.get("in_trashcan"):
             filters.append(Q(in_trashcan=True) & Q(removed=False))
-        else:
+        elif not missing:
             filters.append(Q(in_trashcan=False))
         return filters
 
@@ -657,14 +668,19 @@ class AlbumDateListViewSet(ListViewSet):
         filter = []
         filter.append(Q(photos__thumbnail__aspect_ratio__isnull=False))
 
+        # Missing photos are listed hidden or not, trashed or not.
+        missing = bool(self.request.query_params.get("missing"))
+        if missing:
+            filter.append(missing_photo_q(prefix="photos__"))
+
         if self.request.query_params.get("hidden"):
             filter.append(Q(photos__hidden=True))
-        else:
+        elif not missing:
             filter.append(Q(photos__hidden=False))
 
         if self.request.query_params.get("in_trashcan"):
             filter.append(Q(photos__in_trashcan=True) & Q(photos__removed=False))
-        else:
+        elif not missing:
             filter.append(Q(photos__in_trashcan=False))
 
         # Stack filtering: Only count photos that are either:

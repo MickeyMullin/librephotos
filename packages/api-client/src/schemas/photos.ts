@@ -200,6 +200,8 @@ export const BulkPhotoQuery = z.object({
   public: z.boolean().optional(),
   hidden: z.boolean().optional(),
   in_trashcan: z.boolean().optional(),
+  // Only photos whose file is gone (the Missing photos page).
+  missing: z.boolean().optional(),
   video: z.boolean().optional(),
   photo: z.boolean().optional(),
   // true: only screenshots / documents; false: none of them.

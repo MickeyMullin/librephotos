@@ -82,7 +82,9 @@ export function TrashcanActions(props: Readonly<Props>) {
 
   return (
     <Group>
-      {location.pathname.startsWith("/deleted") && (
+      {/* The Missing photos page lists trashed photos too; deleting permanently
+          only ever takes the ones in the trash. */}
+      {(location.pathname.startsWith("/deleted") || location.pathname.startsWith("/missing")) && (
         <>
           <Tooltip
             label={selectedCount === 1 ? t("trash.restorePhoto") : t("trash.restorePhotos", { count: selectedCount })}
