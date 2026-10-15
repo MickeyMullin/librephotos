@@ -1,7 +1,7 @@
 /**
- * The Details panel's link button: the link opens the photo's own page, by
- * the photo's id (stable across a Replace, unlike the image hash), shared
- * through the share sheet on a touch screen and copied elsewhere.
+ * The Details panel's link to the photo's own page: a real link (so the
+ * browser offers new tab, Copy Link and Share), by the photo's id, which
+ * survives a Replace, unlike the image hash.
  */
 import { MantineProvider } from "@mantine/core";
 import React, { act } from "react";
@@ -10,25 +10,21 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import i18n from "../../i18n";
 import { PhotoLinkButton } from "./PhotoLinkButton";
 
-const stubs = vi.hoisted(() => ({ copied: vi.fn(), failed: vi.fn() }));
+const stubs = vi.hoisted(() => ({ navigate: vi.fn() }));
 
 vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => stubs.navigate,
   useRouter: () => ({
     buildLocation: ({ params }: { params: { id: string } }) => ({ href: `/photo/${params.id}` }),
   }),
 }));
-vi.mock("../../service/notifications", () => ({
-  notification: { copyPhotoLink: stubs.copied, copyPhotoLinkFailed: stubs.failed },
-}));
 
 const ID = "123e4567-e89b-12d3-a456-426614174000";
-const LINK = `${window.location.origin}/photo/${ID}`;
-let touch = false;
 
 beforeAll(async () => {
-  // @ts-ignore - jsdom has no matchMedia
+  // @ts-ignore - jsdom has no matchMedia, MantineProvider needs it
   window.matchMedia = (query: string) => ({
-    matches: touch && query.includes("coarse"),
+    matches: false,
     media: query,
     addListener: () => {},
     removeListener: () => {},
@@ -41,24 +37,12 @@ beforeAll(async () => {
   await i18n.changeLanguage("en");
 });
 
-const writeText = vi.fn();
-const share = vi.fn();
-
-beforeEach(() => {
-  touch = false;
-  stubs.copied.mockReset();
-  stubs.failed.mockReset();
-  writeText.mockReset().mockResolvedValue(undefined);
-  share.mockReset().mockResolvedValue(undefined);
-  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
-  Object.defineProperty(navigator, "share", { value: share, configurable: true });
-});
-
+beforeEach(() => stubs.navigate.mockReset());
 afterEach(() => {
   document.body.innerHTML = "";
 });
 
-async function press() {
+async function render() {
   const container = document.createElement("div");
   document.body.appendChild(container);
   await act(async () => {
@@ -68,29 +52,35 @@ async function press() {
       </MantineProvider>
     );
   });
-  await act(async () => container.querySelector("button")!.click());
+  return container.querySelector("a")!;
 }
 
-describe("the photo link button", () => {
-  it("copies the link to the photo's page on a computer", async () => {
-    await press();
-    expect(writeText).toHaveBeenCalledWith(LINK);
-    expect(share).not.toHaveBeenCalled();
-    expect(stubs.copied).toHaveBeenCalled();
+async function click(link: HTMLAnchorElement, init: MouseEventInit = {}) {
+  const event = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, ...init });
+  await act(async () => {
+    link.dispatchEvent(event);
+  });
+  return event;
+}
+
+describe("the photo link", () => {
+  it("is a real link to the photo's page", async () => {
+    const link = await render();
+    expect(link.href).toBe(`${window.location.origin}/photo/${ID}`);
   });
 
-  it("opens the share sheet on a touch screen, and closing it is not an error", async () => {
-    touch = true;
-    share.mockRejectedValueOnce(new DOMException("closed", "AbortError"));
-    await press();
-    expect(share).toHaveBeenCalledWith({ url: LINK });
-    expect(writeText).not.toHaveBeenCalled();
-    expect(stubs.failed).not.toHaveBeenCalled();
+  it("goes to the page within the app on a plain click", async () => {
+    const event = await click(await render());
+    expect(event.defaultPrevented).toBe(true);
+    expect(stubs.navigate).toHaveBeenCalledWith({ to: "/photo/$id", params: { id: ID } });
   });
 
-  it("shows the link when the clipboard is refused", async () => {
-    writeText.mockRejectedValueOnce(new Error("denied"));
-    await press();
-    expect(stubs.failed).toHaveBeenCalledWith(LINK);
+  it("leaves a middle click or Ctrl/Cmd-click to the browser (a new tab)", async () => {
+    for (const init of [{ button: 1 }, { ctrlKey: true }, { metaKey: true }]) {
+      // eslint-disable-next-line no-await-in-loop
+      const event = await click(await render(), init);
+      expect(event.defaultPrevented).toBe(false);
+    }
+    expect(stubs.navigate).not.toHaveBeenCalled();
   });
 });

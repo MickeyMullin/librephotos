@@ -1,9 +1,8 @@
 import { ActionIcon, Tooltip } from "@mantine/core";
 import { IconLink } from "@tabler/icons-react";
-import { useRouter } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { notification } from "../../service/notifications";
 
 /**
  * The address of a photo's own page, which opens it with its details. By the
@@ -17,37 +16,33 @@ export function usePhotoLink(photoId: string) {
 }
 
 /**
- * Shares the link to the photo being viewed: the share sheet on a touch
- * screen (Messages, Mail, Copy and the rest), the clipboard elsewhere. If the
- * browser refuses the clipboard, the toast shows the link to copy by hand.
+ * A real link to the photo's page, so the browser's own handling applies:
+ * middle-click or Ctrl/Cmd-click opens a new tab, right-click (a long press
+ * on a phone) offers Copy Link and Share. A plain click goes to the page
+ * within the app.
  */
 export function PhotoLinkButton({ photoId }: { photoId: string }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const link = usePhotoLink(photoId);
   const label = t("lightbox.sidebar.photolink");
 
-  const share = async () => {
-    const touch = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
-    if (touch && typeof navigator.share === "function") {
-      try {
-        await navigator.share({ url: link });
-        return;
-      } catch (error) {
-        // Closing the share sheet is not a failure.
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(link);
-      notification.copyPhotoLink();
-    } catch {
-      notification.copyPhotoLinkFailed(link);
-    }
-  };
-
   return (
     <Tooltip label={label}>
-      <ActionIcon variant="subtle" color="gray" onClick={share} aria-label={label}>
+      <ActionIcon
+        component="a"
+        href={link}
+        variant="subtle"
+        color="gray"
+        aria-label={label}
+        onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
+          // Anything but a plain left click is the browser's (new tab, new
+          // window, download).
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          event.preventDefault();
+          navigate({ to: "/photo/$id", params: { id: photoId } });
+        }}
+      >
         <IconLink size={18} />
       </ActionIcon>
     </Tooltip>
