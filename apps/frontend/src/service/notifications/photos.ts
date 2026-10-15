@@ -1,5 +1,6 @@
 import { showNotification } from "@mantine/notifications";
 import i18n from "../../i18n";
+import { INTERACTIVE_TOAST_STYLE } from "./interactive";
 
 function togglePhotoDelete(isDeleted: boolean, numberOfPhotos: number) {
   const notificationMessage = isDeleted
@@ -200,6 +201,26 @@ function copyPhotoToClipboardFailed() {
   });
 }
 
+function copyPhotoLink() {
+  showNotification({
+    message: i18n.t("toasts.photolink"),
+    title: i18n.t("toasts.photolinktitle"),
+    color: "teal",
+  });
+}
+
+function copyPhotoLinkFailed(link: string) {
+  showNotification({
+    message: i18n.t("toasts.photolinkfailed", { link }),
+    title: i18n.t("toasts.photolinktitle"),
+    color: "red",
+    // Long enough to select the link and copy it by hand, which the
+    // app-wide click-through toast style would not allow.
+    autoClose: 15000,
+    style: INTERACTIVE_TOAST_STYLE,
+  });
+}
+
 function captionModelDownloading() {
   showNotification({
     message: i18n.t("toasts.captionmodeldownloading"),
@@ -220,6 +241,8 @@ export const photos = {
   captionModelDownloading,
   copyPhotoToClipboard,
   copyPhotoToClipboardFailed,
+  copyPhotoLink,
+  copyPhotoLinkFailed,
   deleteMissingPhotos,
   downloadCompleted,
   downloadFailed,

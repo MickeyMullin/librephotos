@@ -21,6 +21,7 @@ import { Description } from "./Description";
 import { KeywordsSection } from "./KeywordsSection";
 import { LocationSection } from "./LocationSection";
 import { PeopleSection } from "./PeopleSection";
+import { PhotoLinkButton } from "./PhotoLinkButton";
 import { SimilarPhotosSection } from "./SimilarPhotosSection";
 import { StackSection } from "./StackSection";
 import { TagsSection } from "./TagsSection";
@@ -58,15 +59,20 @@ const sidebarStyles = {
 
 type SidebarHeaderProps = {
   closeSidepanel: () => void;
+  /** The owner's view: offers the link to the photo's own page. */
+  photoId?: string;
 };
 
-function SidebarHeader({ closeSidepanel }: SidebarHeaderProps) {
+function SidebarHeader({ closeSidepanel, photoId }: SidebarHeaderProps) {
   return (
     <Group justify="space-between">
       <Title order={3}>Details</Title>
-      <ActionIcon variant="subtle" color="gray" onClick={closeSidepanel}>
-        <X />
-      </ActionIcon>
+      <Group gap="xs">
+        {photoId && <PhotoLinkButton photoId={photoId} />}
+        <ActionIcon variant="subtle" color="gray" onClick={closeSidepanel}>
+          <X />
+        </ActionIcon>
+      </Group>
     </Group>
   );
 }
@@ -259,7 +265,7 @@ export function Sidebar({
       bg={colorScheme === "dark" ? theme.colors.dark[6] : theme.colors.gray[0]}
     >
       <Stack>
-        <SidebarHeader closeSidepanel={closeSidepanel} />
+        <SidebarHeader closeSidepanel={closeSidepanel} photoId={photoDetail.id} />
         <TimestampItem photoDetail={photoDetail} isPublic={isPublic} />
         <VersionComponent photoDetail={photoDetail} isPublic={isPublic} />
         {/* Owner-only: CategorySection renders nothing on someone else's photo. */}

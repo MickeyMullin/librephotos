@@ -553,7 +553,8 @@
       "tagsSaveFailed": "The tags could not be saved. Please try again.",
       "save": "Save",
       "filenameFull": "Show the whole filename",
-      "filenameOneLine": "Show the filename on one line"
+      "filenameOneLine": "Show the filename on one line",
+      "photolink": "Share or copy the link to this photo"
     },
     "addface": {
       "tooltip": "Add a face the scan missed",
@@ -1355,7 +1356,10 @@
     "setcategoryfailed": "The category could not be changed. Please try again.",
     "replacedtitle": "Photo replaced",
     "replacedkeptfaces": "{{name}} was replaced. Its faces were kept.",
-    "replacedfacesagain": "{{name}} was replaced. Its faces will be detected again."
+    "replacedfacesagain": "{{name}} was replaced. Its faces will be detected again.",
+    "photolinktitle": "Link to this photo",
+    "photolink": "The link to this photo was copied.",
+    "photolinkfailed": "The link could not be copied. Here it is to copy by hand: {{link}}"
   },
   "rules": {
     "1": "Local time from DATE_TIME_ORIGINAL Exif tag",

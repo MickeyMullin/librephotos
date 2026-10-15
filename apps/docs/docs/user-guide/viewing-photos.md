@@ -123,6 +123,10 @@ Your **Synchronize metadata to disk** setting (Settings → Metadata) controls w
 
 The sidebar displays detailed information about the current photo and provides quick access to related content.
 
+### Linking to a photo
+
+Every photo has its own page, `/photo/<id>`, which shows the picture with its details and tag editor; anyone who opens the link is asked to sign in first if needed, and only sees the photo if it is theirs, shared with them, or public. To get the link for the photo you are looking at, press the link button at the top of the sidebar, next to its close button. On a phone or tablet it opens the share sheet (Messages, Mail, Copy and so on); on a computer it copies the link. On a computer you can also open a photo's page directly by Ctrl-clicking (⌘-clicking on macOS) its thumbnail in the grid. The link uses the photo's id, so it keeps working after the picture is replaced. The link button is not in a release yet; it ships with the first release after 1.2.1.
+
 ### Timestamp
 
 Shows when the photo was taken. You can click the edit button to modify the date and time if needed.
