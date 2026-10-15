@@ -20,11 +20,13 @@ import { DateTime } from "luxon";
 import React from "react";
 import { serverAddress } from "../../api_client/apiClient";
 import { useFetchPhotoDetailsQuery } from "../../api_client/photos/hooks";
+import { useCurrentUserSelfDetailsQuery } from "../../api_client/user/hooks/useCurrentUserSelfDetailsQuery";
 import { BreadcrumbPath } from "../../components/common/BreadcrumbPath";
 import type { FaceLocationType } from "../../components/lightbox";
 import { MediaDisplay } from "../../components/lightbox";
 import { CameraInfoComponent } from "../../components/lightbox/CameraInfoComponent";
 import { Description } from "../../components/lightbox/Description";
+import { FavoriteButton } from "../../components/lightbox/FavoriteButton";
 import { FileInfoComponent } from "../../components/lightbox/FileInfoComponent";
 import { LocationSection } from "../../components/lightbox/LocationSection";
 import { PeopleSection } from "../../components/lightbox/PeopleSection";
@@ -40,6 +42,7 @@ export const Route = createFileRoute("/_protected/photo/$id")({
 function SinglePhotoView() {
   const { id: photoId } = Route.useParams();
   const { data: photoDetail } = useFetchPhotoDetailsQuery(photoId || "");
+  const { data: currentUser } = useCurrentUserSelfDetailsQuery();
   const [faceLocation] = React.useState<FaceLocationType>(null);
   const theme = useMantineTheme();
   const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
@@ -90,6 +93,14 @@ function SinglePhotoView() {
                   </Title>
                 </Anchor>
               </Group>
+              {/* Favorites are the owner's: a photo shared with you shows none. */}
+              {currentUser && photoDetail.owner?.id === currentUser.id && (
+                <FavoriteButton
+                  imageHash={photoDetail.image_hash}
+                  rating={photoDetail.rating}
+                  size={isMobile ? 32 : 40}
+                />
+              )}
             </Group>
 
             <Group>

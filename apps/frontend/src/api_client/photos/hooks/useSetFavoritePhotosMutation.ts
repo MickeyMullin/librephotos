@@ -55,15 +55,15 @@ export const useSetFavoritePhotosMutation = () =>
 
       return data;
     },
-    onSuccess: (data, request) => {
+    onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: [...DateAlbumsQueryKeys] });
       queryClient.invalidateQueries({ queryKey: [...DateAlbumQueryKeys] });
       queryClient.invalidateQueries({ queryKey: [...RecentlyAddedPhotosQueryKeys] });
 
-      // If we have a single photo in individual mode, invalidate its details
-      if (!request.select_all && request.image_hashes.length === 1) {
-        queryClient.invalidateQueries({ queryKey: [...PhotoDetailsQueryKeys, request.image_hashes[0]] });
-      }
+      // Every open photo's details: they are cached by image hash in the
+      // viewer but by photo id on the photo page, and only the active ones
+      // refetch.
+      queryClient.invalidateQueries({ queryKey: [...PhotoDetailsQueryKeys] });
     },
   });
