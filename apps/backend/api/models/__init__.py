@@ -16,6 +16,7 @@ from api.models.photo import Photo
 from api.models.photo_caption import PhotoCaption
 from api.models.photo_metadata import MetadataEdit, MetadataFile, PhotoMetadata
 from api.models.photo_ocr import PhotoOcr
+from api.models.photo_rating import PhotoRating
 from api.models.photo_search import PhotoSearch
 from api.models.photo_share import PhotoShare
 from api.models.photo_stack import PhotoStack
@@ -44,6 +45,7 @@ __all__ = [
     "PhotoCaption",
     "PhotoMetadata",
     "PhotoOcr",
+    "PhotoRating",
     "PhotoSearch",
     "PhotoShare",
     "PhotoStack",

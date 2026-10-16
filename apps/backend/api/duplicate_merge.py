@@ -10,7 +10,8 @@ receives all of it first:
 * albums: the kept copy joins every user album a copy was in, locked ones too:
   the lock protects an album's set of pictures, and the kept copy stands in
   for the one that leaves,
-* rating: the highest, so a favorite stays a favorite,
+* rating: the highest, so a favorite stays a favorite; the same for each
+  library member's own rating (api.library_access),
 * caption: the kept copy's, followed by each different caption of the others,
   unless the user picked one copy's caption to keep instead,
 * dismissed auto tags: stay dismissed on the kept copy,
@@ -29,7 +30,7 @@ import logging
 from django.db.models import Max
 
 from api.metadata.jobs import queue_rating_write
-from api.models import AlbumUser, Photo, Tag
+from api.models import AlbumUser, Photo, PhotoRating, Tag
 from api.models.photo_caption import DISMISSED_TAGS_KEY, PhotoCaption
 
 logger = logging.getLogger(__name__)
@@ -89,6 +90,19 @@ def merge_into_kept(kept, others, caption_from=None):
         kept.rating = best
         queue_rating_write(owner, [kept.pk])
         added["rating"] = best
+
+    kept_member_ratings = dict(
+        PhotoRating.objects.filter(photo=kept).values_list("user_id", "rating")
+    )
+    for row in (
+        PhotoRating.objects.filter(photo__in=others)
+        .values("user_id")
+        .annotate(best=Max("rating"))
+    ):
+        if row["best"] > kept_member_ratings.get(row["user_id"], 0):
+            PhotoRating.objects.update_or_create(
+                photo=kept, user_id=row["user_id"], defaults={"rating": row["best"]}
+            )
 
     shared_to = set()
     for photo in others:

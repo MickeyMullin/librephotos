@@ -119,6 +119,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 "default_timezone",
                 "is_superuser",
                 "public_sharing",
+                "library_owner",
             )
             .order_by("id")
         )

@@ -142,6 +142,16 @@ class User(AbstractUser):
     # "favorites" and "untagged". Empty shows everything. See
     # api.timeline_filter.
     default_timeline_filter = models.JSONField(default=dict, blank=True)
+    # A library member works in another user's library instead of their own:
+    # after login, the API acts as that owner (api.library_access), except
+    # for the member's own account, settings and favorites. Set by an admin.
+    library_owner = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="library_members",
+    )
 
     # Duplicate detection settings
     class DuplicateSensitivity(models.TextChoices):

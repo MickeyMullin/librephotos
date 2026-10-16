@@ -41,7 +41,7 @@ import {
   useMergeStacksMutation,
   useRemoveFromStackMutation,
 } from "../../api_client/stacks";
-import { useAuth } from "../../hooks/useAuth";
+import { useLibraryUserId } from "../../hooks/useLibraryUserId";
 import { copyToClipboard } from "../../util/util";
 import { ModalDownloadOptions } from "../modals/ModalDownloadOptions";
 
@@ -65,7 +65,7 @@ type Props = {
 export function SelectionActions(props: Readonly<Props>) {
   const { t } = useTranslation();
   const location = useLocation();
-  const { userId } = useAuth();
+  const userId = useLibraryUserId();
   const removePhotosFromAlbum = useRemovePhotoFromUserAlbumMutation();
   const setPhotosHidden = useSetPhotosHiddenMutation();
   const setPhotosPublic = useSetPhotosPublicMutation();

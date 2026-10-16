@@ -25,7 +25,10 @@ export function ChunkedUploadButton() {
   const { data: settings } = useGetSettingsQuery();
   const { start, isUploading } = useUpload();
 
-  const hasScanDirectory = !!userSelfDetails?.scan_directory && userSelfDetails.scan_directory.trim() !== "";
+  // A library member uploads into the owner's library, not a folder of their own.
+  const hasScanDirectory =
+    !!userSelfDetails?.library_owner ||
+    (!!userSelfDetails?.scan_directory && userSelfDetails.scan_directory.trim() !== "");
 
   const { getRootProps, getInputProps, open } = useDropzone({
     accept: {

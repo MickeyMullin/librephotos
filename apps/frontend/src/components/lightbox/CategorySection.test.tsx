@@ -1,6 +1,7 @@
 /**
  * The lightbox's Category control (issue #2130): Photo / Screenshot / Document,
- * who set it, where the item shows up, an Undo, and owner-only.
+ * who set it, where the item shows up, an Undo, and only on photos of the
+ * user's library (their own, or the one they work in as a library member).
  */
 import "@mantine/core/styles.css";
 import { MantineProvider } from "@mantine/core";
@@ -263,5 +264,12 @@ describe("CategorySection", () => {
     const container = await renderSection();
     expect(container.querySelector("input[type=radio]")).toBeNull();
     expect(container.textContent).not.toContain("Category");
+  });
+
+  it("is offered to a member of the photo owner's library", async () => {
+    stubs.userId = 2;
+    stubs.user = { ...stubs.user, id: 2, library_owner: { id: 1, username: "alice", first_name: "", last_name: "" } };
+    const container = await renderSection();
+    expect(radio(container, "screenshot").checked).toBe(true);
   });
 });

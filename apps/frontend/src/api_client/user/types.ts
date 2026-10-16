@@ -69,6 +69,10 @@ export const User = z.object({
   duplicate_clear_existing: z.boolean().default(false),
   // What the main timeline shows by default (issue #2130); {} shows everything
   default_timeline_filter: TimelineFilterDefault.optional().default({}),
+  // Whose library this user works in, when not their own (a library member)
+  library_owner: z
+    .object({ id: z.number(), username: z.string(), first_name: z.string(), last_name: z.string() })
+    .nullish(),
 });
 
 export const ManageUser = z.object({
@@ -93,6 +97,8 @@ export const ManageUser = z.object({
   first_name: z.string().nullable(),
   last_name: z.string().nullable(),
   password: z.string().optional(),
+  // The id of the user whose library this user works in, or null for their own
+  library_owner: z.number().nullish(),
 });
 
 export const SimpleUser = z.object({

@@ -22,7 +22,7 @@ vi.mock("../../api_client/photos/hooks/useDismissAutoTagMutation", () => ({
   useDismissAutoTagMutation: () => ({ mutate: stubs.mutate }),
 }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => stubs.navigate }));
-vi.mock("../../hooks/useAuth", () => ({ useAuth: () => ({ userId: stubs.userId }) }));
+vi.mock("../../hooks/useLibraryUserId", () => ({ useLibraryUserId: () => stubs.userId }));
 vi.mock("@mantine/notifications", () => ({
   showNotification: stubs.showNotification,
   hideNotification: stubs.hideNotification,

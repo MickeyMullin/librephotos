@@ -12,6 +12,7 @@ import random
 import re
 
 from api.color_palettes import hex_palette
+from api.library_access import favorite_q
 
 from api.models import (
     AlbumAuto,
@@ -212,9 +213,7 @@ def _get_user_stats(user):
         "places": _photo_group_stats(AlbumPlace.objects.filter(owned)),
         "things": _photo_group_stats(AlbumThing.objects.filter(owned)),
         "events": _photo_group_stats(AlbumAuto.objects.filter(owned)),
-        "number_of_favorites": Photo.objects.filter(
-            owned & Q(rating__gte=user.favorite_min_rating)
-        ).count(),
+        "number_of_favorites": Photo.objects.filter(owned & favorite_q(user)).count(),
         "number_of_hidden": Photo.objects.filter(owned & Q(hidden=True)).count(),
         "number_of_public": Photo.objects.filter(owned & Q(public=True)).count(),
     }

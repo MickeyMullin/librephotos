@@ -30,7 +30,7 @@ vi.mock("../../api_client/stacks", () => ({
   useMergeStacksMutation: noopMutation,
   useRemoveFromStackMutation: noopMutation,
 }));
-vi.mock("../../hooks/useAuth", () => ({ useAuth: () => ({ userId: 1 }) }));
+vi.mock("../../hooks/useLibraryUserId", () => ({ useLibraryUserId: () => 1 }));
 vi.mock("../modals/ModalDownloadOptions", () => ({ ModalDownloadOptions: () => null }));
 
 beforeAll(async () => {

@@ -8,7 +8,7 @@ import { SelectionActions } from "./SelectionActions";
 
 const hooks = vi.hoisted(() => ({ remove: vi.fn(), deleted: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({ useLocation: () => ({ pathname: "/album/user/867" }) }));
-vi.mock("../../hooks/useAuth", () => ({ useAuth: () => ({ userId: 1 }) }));
+vi.mock("../../hooks/useLibraryUserId", () => ({ useLibraryUserId: () => 1 }));
 vi.mock("../../api_client/albums/hooks", () => ({
   useRemovePhotoFromUserAlbumMutation: () => ({ mutate: hooks.remove }),
 }));

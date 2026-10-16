@@ -4,10 +4,10 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetchUserAlbumQuery } from "../../../api_client/albums/hooks";
 import type { DatePhotosGroup, PigPhoto } from "../../../api_client/photos/types";
-import { useCurrentUserSelfDetailsQuery } from "../../../api_client/user/hooks/useCurrentUserSelfDetailsQuery";
 import { validateMediaSearch } from "../../../components/photolist/mediaTypeFilter";
 import { PhotoListView } from "../../../components/photolist/PhotoListView";
 import { useMediaTypeFilter } from "../../../components/photolist/useMediaTypeFilter";
+import { useLibraryUserId } from "../../../hooks/useLibraryUserId";
 import { getPhotosFlatFromGroupedByDate } from "../../../util/util";
 
 export const Route = createFileRoute("/_protected/album/user/$id")({
@@ -19,7 +19,7 @@ function AlbumUserGallery() {
   const [flatPhotos, setFlatPhotos] = useState<PigPhoto[]>([]);
   const [groupedPhotos, setGroupedPhotos] = useState<DatePhotosGroup[]>([]);
   const [isPublic, setIsPublic] = useState(false);
-  const { data: currentUser } = useCurrentUserSelfDetailsQuery();
+  const libraryUserId = useLibraryUserId();
   const { id: albumID } = Route.useParams();
   const mediaType = useMediaTypeFilter();
 
@@ -30,16 +30,16 @@ function AlbumUserGallery() {
     if (!album) {
       return;
     }
-    setIsPublic(album.owner && album.owner.id !== currentUser?.id);
+    setIsPublic(album.owner && album.owner.id !== libraryUserId);
     setGroupedPhotos(album.grouped_photos);
     setFlatPhotos(getPhotosFlatFromGroupedByDate(album.grouped_photos));
-  }, [album, currentUser]);
+  }, [album, libraryUserId]);
 
   function getSubheader(showHeader: boolean) {
     if (showHeader && album) {
       return (
         <span>
-          {", "}owned by {album.owner.id === currentUser?.id ? "you" : album.owner.username}
+          {", "}owned by {album.owner.id === libraryUserId ? "you" : album.owner.username}
         </span>
       );
     }

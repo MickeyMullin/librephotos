@@ -6,7 +6,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDismissAutoTagMutation } from "../../api_client/photos/hooks/useDismissAutoTagMutation";
 import type { Photo as PhotoType } from "../../api_client/photos/types";
-import { useAuth } from "../../hooks/useAuth";
+import { useLibraryUserId } from "../../hooks/useLibraryUserId";
 import { INTERACTIVE_TOAST_STYLE } from "../../service/notifications/interactive";
 
 type Props = Readonly<{
@@ -24,7 +24,7 @@ const UNDO_NOTIFICATION_ID = "autotag-dismiss-undo";
 export function AutoTagsSection({ photoDetail, autoTags, isPublic }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { userId } = useAuth();
+  const userId = useLibraryUserId();
   const { mutate: dismissAutoTag } = useDismissAutoTagMutation();
   const canDismiss = !isPublic && userId !== null && photoDetail.owner?.id === userId;
   // Bound now, so an Undo clicked after the lightbox moved on still targets

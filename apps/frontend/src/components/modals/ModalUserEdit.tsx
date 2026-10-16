@@ -1,4 +1,4 @@
-import { Box, Button, Modal, ScrollArea, SimpleGrid, Space, Text, TextInput, Title } from "@mantine/core";
+import { Box, Button, Modal, ScrollArea, Select, SimpleGrid, Space, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconUser, IconMail as Mail } from "@tabler/icons-react";
 import type { FormEvent } from "react";
@@ -80,6 +80,8 @@ export function ModalUserEdit(props: Props) {
       password: "",
       scan_directory: "",
       upload_directory: "",
+      // A user id as a string, or "" for the user's own library
+      library_owner: "",
     },
     validate: {
       email: value => validateEmail(value),
@@ -103,6 +105,7 @@ export function ModalUserEdit(props: Props) {
         last_name: userToEdit.last_name,
         scan_directory: userToEdit.scan_directory,
         upload_directory: userToEdit.upload_directory ?? "",
+        library_owner: userToEdit.library_owner ? String(userToEdit.library_owner.id) : "",
         password: userPassword || "",
       });
     } else {
@@ -137,6 +140,8 @@ export function ModalUserEdit(props: Props) {
     }
     // An empty upload folder is sent as "" so that it restores the default.
     newUserData.upload_directory = form.values.upload_directory ?? "";
+    // The user list carries the owner as an object; the update takes its id.
+    newUserData.library_owner = form.values.library_owner ? parseInt(form.values.library_owner, 10) : null;
 
     if (createNew) {
       if (userPassword && username) {
@@ -194,6 +199,16 @@ export function ModalUserEdit(props: Props) {
   // Null without a scan directory: the backend refuses uploads then.
   const webUploadLocation = uploadLocation(form.values.scan_directory, form.values.upload_directory);
 
+  // One level only (the backend refuses more): the owner must not work in
+  // another library itself, and a user others work with keeps their own.
+  const hasLibraryMembers = (userList ?? []).some((user: User) => user.library_owner?.id === userToEdit.id);
+  const libraryOptions = [
+    { value: "", label: t("modaluseredit.libraryown") },
+    ...(userList ?? [])
+      .filter((user: User) => user.id !== userToEdit.id && !user.library_owner)
+      .map((user: User) => ({ value: String(user.id), label: t("modaluseredit.libraryof", { name: user.username }) })),
+  ];
+
   return (
     <Modal
       opened={isOpen}
@@ -243,6 +258,24 @@ export function ModalUserEdit(props: Props) {
             <PasswordEntry createNew={createNew} onValidate={onPasswordValidate} closing={closing} />
           </Box>
         </Box>
+        {!createNew && !firstTimeSetup && (
+          <Box pb="md">
+            <Title order={5}>{t("modaluseredit.libraryheader")}</Title>
+            <Text size="sm" c="dimmed">
+              {t("modaluseredit.libraryexplanation")}
+            </Text>
+            <Space h="xs" />
+            <Select
+              aria-label={t("modaluseredit.libraryheader")}
+              data={libraryOptions}
+              value={form.values.library_owner}
+              onChange={value => form.setFieldValue("library_owner", value ?? "")}
+              allowDeselect={false}
+              disabled={hasLibraryMembers}
+              description={hasLibraryMembers ? t("modaluseredit.libraryhasmembers") : undefined}
+            />
+          </Box>
+        )}
         {!createNew && (
           <>
             <Title order={5}>{t("modalscandirectoryedit.header")} </Title>

@@ -86,7 +86,11 @@ function UserTable() {
                 </span>
               </Table.Td>
               <Table.Td>{user.username}</Table.Td>
-              <Table.Td>{user.scan_directory ? user.scan_directory : t("adminarea.notset")}</Table.Td>
+              <Table.Td>
+                {user.library_owner
+                  ? t("adminarea.inlibraryof", { name: user.library_owner.username })
+                  : user.scan_directory || t("adminarea.notset")}
+              </Table.Td>
               {matches && <Table.Td>{user.confidence ? user.confidence : t("adminarea.notset")}</Table.Td>}
               {matches && <Table.Td>{user.photo_count}</Table.Td>}
               {matches && (

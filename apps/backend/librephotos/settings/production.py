@@ -441,8 +441,8 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
+        "api.authentication.LibraryJWTAuthentication",
+        "api.authentication.LibraryBasicAuthentication",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
@@ -464,6 +464,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "api.middleware.FingerPrintMiddleware",
+    "api.library_access.LibraryAccessMiddleware",
     # Required by allauth (>=0.56): rebuilds request state for the account flow.
     "allauth.account.middleware.AccountMiddleware",
 ]

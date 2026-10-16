@@ -10,12 +10,13 @@ from api.geocode.photo_location import find_album_places
 from api.metadata.photo_datetime import extract_date_time
 
 from api.image_similarity import search_similar_image
+from api.library_access import current_member, set_member_rating
 from api.models import AlbumDate, File, Photo
 from api.models.album_place import get_album_place
 from api.models.photo_metadata import PhotoMetadata
 from api.models.photo_ocr import PhotoOcr
 from api.serializers.photo_metadata import PhotoMetadataSummarySerializer
-from api.serializers.simple import SimpleUserSerializer
+from api.serializers.simple import SimpleUserSerializer, ViewerRatingField
 from api.thumbnails import animation_frames
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ class PhotoSummarySerializer(serializers.ModelSerializer):
     stacks = serializers.SerializerMethodField()
     # Flag indicating if this photo has a RAW file variant (PhotoPrism-like model)
     has_raw_variant = serializers.SerializerMethodField()
+    rating = ViewerRatingField(read_only=True)
 
     class Meta:
         model = Photo
@@ -202,6 +204,9 @@ class GroupedPhotosSerializer(serializers.ModelSerializer):
 
 
 class PhotoEditSerializer(serializers.ModelSerializer):
+    # Shown, never written here: update() has always ignored it.
+    rating = ViewerRatingField(read_only=True)
+
     class Meta:
         model = Photo
         fields = (
@@ -354,6 +359,7 @@ class PhotoSerializer(serializers.ModelSerializer):
     shared_to = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     image_path = serializers.SerializerMethodField()
     owner = SimpleUserSerializer(many=False, read_only=True)
+    rating = ViewerRatingField(required=False)
     embedded_media = serializers.SerializerMethodField()
     # File variants (RAW, JPEG, video for Live Photos, etc.)
     # PhotoPrism-like model where one Photo can have multiple file variants
@@ -441,6 +447,14 @@ class PhotoSerializer(serializers.ModelSerializer):
         # /api/photosedit/category/ (or the PhotoEditSerializer), which pins
         # category_source="user"; category_source is server-managed.
         read_only_fields = ("is_screenshot", "is_document", "category_source")
+
+    def update(self, instance, validated_data):
+        # A library member's rating is their own (api.library_access): it
+        # must not become the photo's rating, which is the owner's.
+        member = current_member()
+        if member is not None and "rating" in validated_data:
+            set_member_rating(member, [instance.pk], validated_data.pop("rating"))
+        return super().update(instance, validated_data)
 
     def _get_metadata(self, obj) -> PhotoMetadata | None:
         """Helper to get PhotoMetadata, with caching."""

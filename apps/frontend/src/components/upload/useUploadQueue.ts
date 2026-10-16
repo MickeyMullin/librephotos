@@ -106,7 +106,10 @@ export function useUploadQueue(): UploadQueue {
 
       patchItem(item.id, { status: "hashing", progress: 0, error: undefined });
       const md5 = await calculateMD5(item.file);
-      const response = await fetchClient.get<string>(`/exists/${md5 + user.id}`);
+      // A photo's hash ends in its owner's id; a library member uploads
+      // into the owner's library.
+      const ownerId = user.library_owner?.id ?? user.id;
+      const response = await fetchClient.get<string>(`/exists/${md5 + ownerId}`);
       const { exists } = parseWithNotification(UploadExistResponse, response, "Failed to parse upload exists response");
       if (exists) {
         patchItem(item.id, { status: "duplicate", progress: 100 });

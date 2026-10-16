@@ -67,6 +67,7 @@ class UserTest(TestCase):
         "duplicate_sensitivity",
         "duplicate_clear_existing",
         "default_timeline_filter",
+        "library_owner",
         "cluster_selection_epsilon",
         "llm_settings",
         "text_alignment",

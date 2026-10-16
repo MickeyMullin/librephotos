@@ -36,8 +36,9 @@ screenshots.
 
 from dataclasses import dataclass
 
-from django.conf import settings
 from django.db.models import Q
+
+from api.library_access import favorite_q
 
 MEDIA_CHOICES = ("all", "photos", "videos")
 
@@ -106,10 +107,8 @@ class TimelineFilter:
             elif mode == "only":
                 filters.append(Q(**{f"{prefix}{field}": True}))
         if self.favorites:
-            min_rating = getattr(
-                user, "favorite_min_rating", settings.DEFAULT_FAVORITE_MIN_RATING
-            )
-            filters.append(Q(**{f"{prefix}rating__gte": min_rating}))
+            # The viewer's favorites: a library member's are their own.
+            filters.append(favorite_q(user, prefix))
         if self.untagged:
             # Positive on purpose, like the rest: ``isnull`` on the m2m is a
             # LEFT JOIN, so with ``photos__`` it keeps a day's untagged photos

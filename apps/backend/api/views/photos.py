@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.mime import mime_type
+from api.library_access import favorite_q, library_member, set_member_rating
 from api.metadata.jobs import queue_rating_write
 from api.ml_models import captioning_model_exists, start_model_download
 from api.models import AlbumUser, File, Photo, User
@@ -394,14 +395,22 @@ class SetPhotosFavorite(BulkPhotoMutationView):
     select_all_only_changed = True
 
     def differs(self, user, value):
-        if value:
-            return Q(rating__lt=user.favorite_min_rating)
-        return Q(rating__gte=user.favorite_min_rating)
+        favorite = favorite_q(user)
+        return ~favorite if value else favorite
 
     def new_values(self, user, value):
         return {"rating": user.favorite_min_rating if value else 0}
 
     def apply(self, user, photos, value):
+        member = library_member(user)
+        if member is not None:
+            # A library member's favorites are their own ratings; the
+            # photo's rating (and its file) stay the owner's.
+            photo_ids = list(photos.values_list("id", flat=True))
+            set_member_rating(
+                member, photo_ids, user.favorite_min_rating if value else 0
+            )
+            return len(photo_ids)
         # Photo.save() writes a changed rating to the file or sidecar; this
         # UPDATE skips save(), so the same write is queued as a job. The ids
         # are taken first: afterwards the rating filter no longer matches.

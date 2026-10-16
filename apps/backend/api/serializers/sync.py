@@ -6,6 +6,8 @@ by a module-level function. No per-row DB access, no N+1. The output columns
 mirror the client's ``remote_*`` tables (doc 02 §1).
 """
 
+from api.library_access import current_member, viewer_rating
+
 
 def to_ms(dt):
     """UTC datetime -> integer milliseconds since epoch, or None."""
@@ -66,7 +68,14 @@ PHOTO_VALUES = (
 def serialize_photo_row(row):
     """Turn one ``.values()`` dict (annotated with ``has_motion``) into a
     flat wire dict matching the client's ``remote_photo`` columns."""
-    min_rating = row.get("owner__favorite_min_rating") or 0
+    # A library member syncs their own ratings and favorites
+    # (api.library_access); everyone else the photo's.
+    member = current_member()
+    if member is not None:
+        min_rating = member.favorite_min_rating or 0
+    else:
+        min_rating = row.get("owner__favorite_min_rating") or 0
+    rating = viewer_rating(row["id"], row["rating"])
     if row["video"]:
         media_type = "video"
     elif row.get("has_motion"):
@@ -90,8 +99,8 @@ def serialize_photo_row(row):
         "last_modified": to_ms(row["last_modified"]),
         "type": media_type,
         "video_length_ms": _video_length_ms(row["video_length"]),
-        "rating": row["rating"],
-        "is_favorite": bool(min_rating and row["rating"] >= min_rating),
+        "rating": rating,
+        "is_favorite": bool(min_rating and rating >= min_rating),
         "hidden": bool(row["hidden"]),
         "in_trashcan": bool(row["in_trashcan"]),
         "removed": bool(row["removed"]),

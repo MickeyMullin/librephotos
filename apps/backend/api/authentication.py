@@ -15,15 +15,38 @@ header and is ``csrf_exempt`` already).
 """
 
 from django.utils.translation import gettext_lazy as _
+from rest_framework.authentication import BasicAuthentication
 from rest_framework_simplejwt.authentication import (
     AUTH_HEADER_TYPE_BYTES,
     JWTAuthentication,
 )
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
+from api.library_access import act_in_library
+
 JWT_COOKIE_NAME = "jwt"
 
 _HEADER_TYPES = {header_type.lower() for header_type in AUTH_HEADER_TYPE_BYTES}
+
+
+class LibraryMemberMixin:
+    """Authenticates a library member as the owner of their library.
+
+    See ``api.library_access``: every authentication class the API uses
+    goes through this, so a member gets the same library whichever way the
+    request carries its credentials.
+    """
+
+    def authenticate(self, request):
+        return act_in_library(request, super().authenticate(request))
+
+
+class LibraryJWTAuthentication(LibraryMemberMixin, JWTAuthentication):
+    """simplejwt's bearer-token authentication, library members included."""
+
+
+class LibraryBasicAuthentication(LibraryMemberMixin, BasicAuthentication):
+    """DRF's basic authentication, library members included."""
 
 
 class JWTCookieAuthentication(JWTAuthentication):
@@ -84,6 +107,9 @@ class JWTCookieAuthentication(JWTAuthentication):
         return self.get_user(validated_token), validated_token
 
     def authenticate(self, request):
+        return act_in_library(request, self._authenticate(request))
+
+    def _authenticate(self, request):
         raw_token = self.header_token(request)
         if raw_token is not None:
             return self.authenticate_token(raw_token)
@@ -107,4 +133,4 @@ class JWTCookieAuthentication(JWTAuthentication):
             raw_token = self.cookie_token(request)
         if raw_token is None:
             return None
-        return self.authenticate_token(raw_token)
+        return act_in_library(request, self.authenticate_token(raw_token))

@@ -6,6 +6,8 @@ sidebar_position: 6
 
 LibrePhotos offers multiple ways to share your photos and albums — with other users on your instance, or publicly with anyone via a link.
 
+To give another user your whole library to work in, with their own favorites, rather than sharing photos and albums one at a time, an admin can make them a member of it; see [Working in another user's library](./managing-users.md#working-in-another-users-library).
+
 ## The Sharing Page
 
 The **Sharing** page (accessible from the navigation) is your central hub for all sharing activity. It provides an overview of:

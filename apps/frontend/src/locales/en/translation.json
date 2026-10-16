@@ -983,7 +983,8 @@
     "serverlogslines": "Lines",
     "refresh": "Refresh",
     "downloadserverlogs": "Download Server Logs",
-    "serverlogsnone": "No logs available"
+    "serverlogsnone": "No logs available",
+    "inlibraryof": "Works in {{name}}'s library"
   },
   "joblist": {
     "workerlogs": "Worker Logs",
@@ -1012,7 +1013,12 @@
     "createheader": "Create User",
     "errorusernameexists": "A user with that name already exists",
     "errorusernamecannotbeblank": "User name cannot be blank",
-    "errorinvalidemail": "Enter a valid email address"
+    "errorinvalidemail": "Enter a valid email address",
+    "libraryheader": "Library",
+    "libraryexplanation": "A user can work in another user's library instead of their own. They see and edit that library's photos, albums, tags and captions as if they were theirs, and get no admin rights from it. Their favorites, settings and password stay their own.",
+    "libraryown": "Their own library",
+    "libraryof": "{{name}}'s library",
+    "libraryhasmembers": "Others work in this user's library, so it cannot join another one."
   },
   "modalscandirectoryedit": {
     "header": "Set the scan directory for user",

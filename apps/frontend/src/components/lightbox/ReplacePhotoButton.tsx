@@ -6,7 +6,7 @@ import { ApiError } from "../../api_client/api";
 import { useReplacePhotoMutation } from "../../api_client/photos/hooks/useReplacePhotoMutation";
 import type { Photo as PhotoType } from "../../api_client/photos/types";
 import { useGetSettingsQuery } from "../../api_client/settings";
-import { useAuth } from "../../hooks/useAuth";
+import { useLibraryUserId } from "../../hooks/useLibraryUserId";
 import { notification } from "../../service/notifications";
 
 type Props = Readonly<{
@@ -37,7 +37,7 @@ function sameFormat(a: string, b: string) {
 // because the file travels through the same chunked upload.
 export function ReplacePhotoButton({ photoDetail, fileName }: Props) {
   const { t } = useTranslation();
-  const { userId } = useAuth();
+  const userId = useLibraryUserId();
   const { data: settings } = useGetSettingsQuery();
   const replace = useReplacePhotoMutation();
   const inputRef = useRef<HTMLInputElement>(null);

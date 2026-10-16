@@ -9,6 +9,7 @@ const stubs = vi.hoisted(() => ({
   uploadChunk: vi.fn<(opts: { form_data: FormData; offset: number; chunk_size: number }) => Promise<unknown>>(),
   uploadFinished: vi.fn<(opts: { formData: FormData; shouldInvalidate: boolean }) => Promise<unknown>>(),
   invalidate: vi.fn(),
+  self: { id: 7, scan_directory: "/data" } as Record<string, unknown>,
 }));
 
 vi.mock("../../api_client/api", () => ({
@@ -16,7 +17,7 @@ vi.mock("../../api_client/api", () => ({
   queryClient: { invalidateQueries: () => {} },
 }));
 vi.mock("../../api_client/user/hooks/useCurrentUserSelfDetailsQuery", () => ({
-  useCurrentUserSelfDetailsQuery: () => ({ data: { id: 7, scan_directory: "/data" } }),
+  useCurrentUserSelfDetailsQuery: () => ({ data: stubs.self }),
 }));
 vi.mock("../../api_client/upload", async importOriginal => ({
   ...(await importOriginal<typeof import("../../api_client/upload")>()),
@@ -59,6 +60,7 @@ beforeAll(() => {
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  stubs.self = { id: 7, scan_directory: "/data" };
   stubs.md5.mockImplementation(async f => `md5-${f.name}`);
   stubs.exists.mockResolvedValue({ exists: false });
   stubs.uploadChunk.mockImplementation(async opts => ({ upload_id: "u1", offset: opts.offset + opts.chunk_size }));
@@ -103,6 +105,22 @@ describe("useUploadQueue", () => {
     expect(finished.formData.get("filename")).toBe("fresh.jpg");
     expect(finished.formData.get("user")).toBe("7");
     expect(stubs.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("checks for duplicates in the owner's library for a library member", async () => {
+    stubs.self = { id: 7, scan_directory: "", library_owner: { id: 1, username: "alice" } };
+    stubs.exists.mockResolvedValue({ exists: true });
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    await act(async () => {
+      latest.start([file("dup.jpg", 10)]);
+    });
+    await settle();
+
+    expect(stubs.exists).toHaveBeenCalledWith("/exists/md5-dup.jpg1");
+    expect(latest.items[0].status).toBe("duplicate");
   });
 
   it("keeps the error on the failed item and lets it be retried", async () => {

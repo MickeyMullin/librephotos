@@ -23,7 +23,7 @@ vi.mock("../../api_client/photos/hooks/useReplacePhotoMutation", () => ({
 vi.mock("../../api_client/settings", () => ({
   useGetSettingsQuery: () => ({ data: { allow_upload: stubs.allowUpload } }),
 }));
-vi.mock("../../hooks/useAuth", () => ({ useAuth: () => ({ userId: stubs.userId }) }));
+vi.mock("../../hooks/useLibraryUserId", () => ({ useLibraryUserId: () => stubs.userId }));
 
 beforeAll(async () => {
   // @ts-ignore - jsdom has no matchMedia, MantineProvider needs it

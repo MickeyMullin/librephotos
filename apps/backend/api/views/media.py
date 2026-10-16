@@ -13,13 +13,12 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden, StreamingHttpResponse
 from django.utils import timezone
 from django.utils.encoding import iri_to_uri
-from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from api import binaries, ffmpeg_budget, transcode_cache, video_color
 from api.all_tasks import zip_file_name
-from api.authentication import JWTCookieAuthentication
+from api.authentication import JWTCookieAuthentication, LibraryBasicAuthentication
 from api.http_range import file_size, ranged_response
 from api.mime import mime_type
 from api.models import AlbumUser, Photo
@@ -216,7 +215,7 @@ class UnifiedMediaAccessView(APIView):
     # header. A stale cookie makes the request anonymous rather than a 401, so
     # public photos and shared albums are still served (see
     # JWTCookieAuthentication).
-    authentication_classes = (JWTCookieAuthentication, BasicAuthentication)
+    authentication_classes = (JWTCookieAuthentication, LibraryBasicAuthentication)
 
     def _should_use_proxy(self):
         return not getattr(settings, "SERVE_FRONTEND", False)

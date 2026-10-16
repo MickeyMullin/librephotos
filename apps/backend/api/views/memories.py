@@ -27,6 +27,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.library_access import viewer_rating_of
 from api.models import AlbumDate, Photo
 from api.serializers.photos import PhotoSummarySerializer
 from api.views.albums import _with_photo_summary_relations
@@ -160,7 +161,10 @@ def pick_cover(photos):
     beat videos because a video makes a poor tile, and the earliest photo of the
     day breaks the tie.
     """
-    return min(photos, key=lambda photo: (photo.video, -(photo.rating or 0)))
+    return min(
+        photos,
+        key=lambda photo: (photo.video, -(viewer_rating_of(photo) or 0)),
+    )
 
 
 def memory_candidates(user):

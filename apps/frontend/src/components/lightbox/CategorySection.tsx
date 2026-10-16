@@ -17,7 +17,7 @@ import type { Photo as PhotoType } from "../../api_client/photos/types";
 import { useFetchPhotoTagsQuery } from "../../api_client/tags/hooks";
 import { useCurrentUserSelfDetailsQuery } from "../../api_client/user/hooks/useCurrentUserSelfDetailsQuery";
 import type { User } from "../../api_client/user/types";
-import { useAuth } from "../../hooks/useAuth";
+import { useLibraryUserId } from "../../hooks/useLibraryUserId";
 import { INTERACTIVE_TOAST_STYLE } from "../../service/notifications/interactive";
 import { savedTimelineFilter, timelineFilterShows } from "../photolist/timelineFilter";
 
@@ -87,7 +87,7 @@ function pickedState(imageHash: string, category: PhotoCategory): CategoryState 
 // only to clear a wrong flag: it can never become a screenshot or document.
 export function CategorySection({ photoDetail }: Props) {
   const { t } = useTranslation();
-  const { userId } = useAuth();
+  const userId = useLibraryUserId();
   const { data } = useCurrentUserSelfDetailsQuery();
   const user = data as User | undefined;
   const setCategory = useSetPhotosCategoryMutation();

@@ -21,11 +21,29 @@ Scan directories of different users must not overlap. Every photo belongs to exa
 
 If your admin account already scans `/data` and you want to add more users, move the admin's photos into a subfolder such as `/data/admin`, set that as the admin's scan directory and run a scan. The moved photos are matched to their existing entries by their content, so ratings, faces and albums are kept; see [Missing Photos](./missing-photos.md) for how that relinking works.
 
-To let several users see the same photos, keep the photos in one user's library and share them from there: albums and individual photos can be shared with other users on the instance, see [Sharing](./sharing.md).
+To let several users see the same photos, keep the photos in one user's library and share them from there: albums and individual photos can be shared with other users on the instance, see [Sharing](./sharing.md). To give someone the whole library to work in, not just what you share, make them a member of it; see [Working in another user's library](#working-in-another-users-library).
 
 While the application saves metadata (e.g., tags, albums, facial recognition data) on a per-user basis in its database, it doesn’t inherently restrict access to the photos themselves. Access permissions must be managed through the file system / paths.
 
 The separation will also not keep the photos "private" as the admin of the host system can see all the images.
+
+## Working in another user's library
+
+:::note
+Library members are not in a release yet; they ship with the first release after 1.2.1.
+:::
+
+Sharing gives another user a read-only view of the photos and albums you pick, on their Sharing page. To give someone, such as a partner, the whole library instead, make their account a member of yours: Admin Area → edit the user → **Library** → pick "*yourname*'s library", then save. The users table then shows "Works in *yourname*'s library" in place of their scan directory.
+
+A member signs in with their own name and password, and then works in the owner's library as if it were theirs:
+
+- They see everything in it: the timeline, albums, people, places, tags, search, the trash, the Library page, and photos added later.
+- They can change it the same way the owner can: add and remove tags, edit captions, put photos in albums, hide or delete photos, upload. These changes belong to the photos, so the owner sees them too, and the other way round.
+- Their **favorites are their own**. A favorite is a rating of at least the account's minimum favorite rating, and a member's ratings are kept apart from the owner's: starring a photo stars it only for the person who did it, the Favorites page and the favorites filter show each person's own, and resolving duplicates keeps each person's highest rating. Only the owner's rating is written into the photo file's metadata.
+- Their account stays their own: their profile, password and settings, such as the minimum favorite rating and the default timeline filter. Settings about how the library is run (scan directory, face recognition, metadata writing) are the owner's, and only the owner can change them.
+- Membership never makes anyone an admin. A member who is not an admin has no Admin Area, and an admin owner's rights do not carry over to the member.
+
+Only an admin can make a user a member or take them out again (**Library** → "Their own library"). Membership is one level deep: a library's owner cannot be a member of another library, and a user that others work with cannot join someone else's. A member's own photos, if they had any, stay in the database but are not shown while they are a member; they come back when the membership ends. If the owner's account is deactivated or deleted, the member is back in their own library.
 
 ## Upload folder
 

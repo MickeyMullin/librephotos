@@ -13,7 +13,7 @@ from rest_framework.exceptions import ValidationError
 from api.batch_jobs import batch_calculate_clip_embedding
 from api.ml_models import do_all_models_exist, download_models
 from api.models import Photo, User
-from api.serializers.simple import PhotoSuperSimpleSerializer
+from api.serializers.simple import PhotoSuperSimpleSerializer, SimpleUserSerializer
 from api.timeline_filter import validate_default_timeline_filter
 from api.util import is_valid_path
 from nextcloud.server_address import UnsafeServerAddress, validate_server_address
@@ -334,6 +334,9 @@ class UserSerializer(serializers.ModelSerializer):
     photo_count = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
     avatar = AvatarField(required=False, allow_null=True, max_length=100)
+    # Whose library this user works in, when not their own
+    # (api.library_access). Only an admin changes it, on /api/manage/user/.
+    library_owner = SimpleUserSerializer(read_only=True)
 
     class Meta:
         model = User
@@ -406,6 +409,7 @@ class UserSerializer(serializers.ModelSerializer):
             "duplicate_sensitivity",
             "duplicate_clear_existing",
             "default_timeline_filter",
+            "library_owner",
         )
 
     def validate_nextcloud_app_password(self, value):
@@ -653,6 +657,11 @@ class DeleteUserSerializer(serializers.ModelSerializer):
 
 class ManageUserSerializer(serializers.ModelSerializer):
     photo_count = serializers.SerializerMethodField()
+    library_owner = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(is_active=True),
+        allow_null=True,
+        required=False,
+    )
 
     class Meta:
         model = get_user_model()
@@ -675,6 +684,7 @@ class ManageUserSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "password",
+            "library_owner",
         )
         extra_kwargs = {
             "password": {"write_only": True},
@@ -703,6 +713,9 @@ class ManageUserSerializer(serializers.ModelSerializer):
 
         if "username" in validated_data:
             self.apply_username(instance, validated_data.pop("username"))
+
+        if "library_owner" in validated_data:
+            self.apply_library_owner(instance, validated_data.pop("library_owner"))
 
         assign_fields(instance, validated_data, ("email", "first_name", "last_name"))
 
@@ -748,6 +761,33 @@ class ManageUserSerializer(serializers.ModelSerializer):
             f"Updated upload directory for user {instance.username} "
             f"to {abs_upload_directory}"
         )
+
+    def apply_library_owner(self, instance: User, owner):
+        """Make ``instance`` work in ``owner``'s library, or in their own
+        again when ``owner`` is None (api.library_access).
+
+        One level only: an owner cannot be a member elsewhere, and a member
+        cannot have members, so a request never acts for a chain of users.
+        """
+        if owner is not None:
+            if owner.pk == instance.pk:
+                raise ValidationError(
+                    {"library_owner": "A user cannot join their own library."}
+                )
+            if owner.library_owner_id:
+                raise ValidationError(
+                    {
+                        "library_owner": f"{owner.username} works in another "
+                        "user's library."
+                    }
+                )
+            if instance.library_members.exists():
+                raise ValidationError(
+                    {"library_owner": f"Others work in {instance.username}'s library."}
+                )
+        instance.library_owner = owner
+        library = f"{owner.username}'s" if owner else "their own"
+        logger.info(f"User {instance.username} now works in {library} library")
 
     def apply_username(self, instance: User, username):
         if username != "":
