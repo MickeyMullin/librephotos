@@ -30,6 +30,12 @@ def as_compiled():
 
 
 class StandaloneExecutableTest(SimpleTestCase):
+    def test_startup_recovers_interrupted_jobs_before_qcluster_starts(self):
+        self.assertIn(
+            ["start_job_cleanup_service", "--recover-interrupted-jobs"],
+            standalone.STARTUP_COMMANDS,
+        )
+
     def test_none_from_source(self):
         self.assertIsNone(standalone.standalone_executable())
 

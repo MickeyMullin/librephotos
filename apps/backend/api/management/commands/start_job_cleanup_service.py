@@ -4,13 +4,34 @@ from django.core.management.base import BaseCommand
 from django_q.models import Schedule
 from django_q.tasks import schedule
 
+from api.models import LongRunningJob
+
 logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
     help = "Start the job cleanup service to mark stuck jobs as failed and remove old completed jobs."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--recover-interrupted-jobs",
+            action="store_true",
+            help=(
+                "Recover ORM-broker leases left by a prior worker. Use only during "
+                "backend boot, before qcluster starts."
+            ),
+        )
+
     def handle(self, *args, **kwargs):
+        # The container entrypoints pass this flag immediately before they start
+        # qcluster. Do not recover leases during normal invocations: a future
+        # lock may belong to a live worker, and must never be mistaken for one
+        # interrupted by a database outage.
+        if kwargs["recover_interrupted_jobs"]:
+            recovered = LongRunningJob.recover_interrupted_jobs()
+            if recovered:
+                logger.warning("Recovered %s interrupted background job(s)", recovered)
+
         # Schedule hourly cleanup of stuck jobs (running for more than 24 hours)
         if not Schedule.objects.filter(
             func="api.models.long_running_job.LongRunningJob.cleanup_stuck_jobs"

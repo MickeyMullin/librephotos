@@ -64,7 +64,7 @@ PROCESS_NAMES = {
 STARTUP_COMMANDS = (
     ["start_service", "all"],
     ["start_cleaning_service"],
-    ["start_job_cleanup_service"],
+    ["start_job_cleanup_service", "--recover-interrupted-jobs"],
     ["clear_cache"],
     ["build_similarity_index"],
 )

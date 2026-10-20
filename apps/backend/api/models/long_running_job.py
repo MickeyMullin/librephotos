@@ -1,10 +1,13 @@
+import logging
 import uuid
 from datetime import datetime, timedelta
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from api.models.user import User, get_deleted_user
+
+logger = logging.getLogger(__name__)
 
 
 class LongRunningJob(models.Model):
@@ -202,6 +205,136 @@ class LongRunningJob(models.Model):
         return cls.create_job(
             user=user, job_type=job_type, job_id=job_id, start_now=True
         )
+
+    @staticmethod
+    def _task_values(task):
+        """Yield every value stored in a django-q task's arguments."""
+        values = [*task.get("args", ())]
+        values.extend(task.get("kwargs", {}).values())
+        while values:
+            value = values.pop()
+            if isinstance(value, dict):
+                values.extend(value.values())
+            elif isinstance(value, (list, tuple, set)):
+                values.extend(value)
+            else:
+                yield value
+
+    @staticmethod
+    def _task_function_name(task):
+        """Return a stable dotted name for a django-q task function."""
+        func = task.get("func")
+        module = getattr(func, "__module__", None)
+        name = getattr(func, "__name__", None)
+        if module and name:
+            return f"{module}.{name}"
+        return str(func)
+
+    @classmethod
+    def _legacy_clip_job_id(cls, task, unfinished_by_id):
+        """Associate a pre-recovery CLIP task whose arguments lacked ``job_id``.
+
+        The legacy batch embedding task creates its own LongRunningJob only
+        after a worker has started.  Its queued payload therefore has just the
+        user argument.  Recover it only when exactly one unfinished CLIP job
+        belongs to that user; ambiguity is deliberately left for the regular
+        stuck-job timeout rather than cancelling unrelated work.
+        """
+        if (
+            cls._task_function_name(task)
+            != "api.batch_jobs.batch_calculate_clip_embedding"
+        ):
+            return None
+        user = next(iter(task.get("args", ())), None)
+        user_id = getattr(user, "pk", None)
+        if user_id is None:
+            return None
+        candidates = [
+            job_id
+            for job_id, job in unfinished_by_id.items()
+            if (
+                job.job_type == cls.JOB_CALCULATE_CLIP_EMBEDDINGS
+                and job.started_by_id == user_id
+            )
+        ]
+        return candidates[0] if len(candidates) == 1 else None
+
+    @classmethod
+    def recover_interrupted_jobs(cls):
+        """Fail jobs leased by a worker that died during a database outage.
+
+        django-q's ORM broker leases a task by moving ``OrmQ.lock`` into the
+        future.  LibrePhotos configures a long retry window for heavyweight
+        work, so a connection loss after that lease can strand a task for days.
+        This method runs during backend startup, before qcluster starts, when
+        any future lock necessarily belongs to a worker from the previous
+        process.  It fails only jobs linked to such a lease and removes their
+        queued work so it cannot later run a duplicate operation.
+
+        Returns:
+            The number of LongRunningJob rows transitioned to failed.
+        """
+        from django_q.conf import Conf
+        from django_q.models import OrmQ
+
+        now = timezone.now()
+        with transaction.atomic():
+            queue = OrmQ.objects.filter(key=Conf.CLUSTER_NAME)
+            unfinished_by_id = {
+                str(job.job_id): job
+                for job in cls.objects.select_for_update().filter(finished=False)
+            }
+            recovered_ids = set()
+            recovered_queue_ids = set()
+            for queued in queue.select_for_update().filter(lock__gt=now):
+                task = queued.task
+                linked_ids = {
+                    str(value)
+                    for value in cls._task_values(task)
+                    if str(value) in unfinished_by_id
+                }
+                if not linked_ids:
+                    legacy_id = cls._legacy_clip_job_id(task, unfinished_by_id)
+                    if legacy_id is not None:
+                        linked_ids.add(legacy_id)
+                if linked_ids:
+                    recovered_ids.update(linked_ids)
+                    recovered_queue_ids.add(queued.pk)
+
+            if not recovered_ids:
+                return 0
+
+            # A root task can have fanned out before the database failed.  Drop
+            # every queued child bearing this job id, not only the locked task
+            # that proved the job was interrupted.
+            queue_ids = set(recovered_queue_ids)
+            for queued in queue.select_for_update():
+                if any(
+                    str(value) in recovered_ids
+                    for value in cls._task_values(queued.task)
+                ):
+                    queue_ids.add(queued.pk)
+            queue.filter(pk__in=queue_ids).delete()
+
+            error = (
+                "Job interrupted by a database interruption; queued work was cancelled"
+            )
+            count = 0
+            for job_id in recovered_ids:
+                job = unfinished_by_id[job_id]
+                result = dict(job.result) if isinstance(job.result, dict) else {}
+                result.update(status="failed", error=error)
+                count += cls.objects.filter(pk=job.pk, finished=False).update(
+                    failed=True,
+                    finished=True,
+                    finished_at=now,
+                    result=result,
+                )
+            if count:
+                logger.warning(
+                    "Recovered %s job(s) interrupted by a database outage", count
+                )
+            return count
 
     @classmethod
     def cleanup_stuck_jobs(cls, hours=None):

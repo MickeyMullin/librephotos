@@ -106,7 +106,7 @@ echo "Starting Django server..."
 
 python manage.py start_service all
 python manage.py start_cleaning_service
-python manage.py start_job_cleanup_service
+python manage.py start_job_cleanup_service --recover-interrupted-jobs
 python manage.py clear_cache 
 # Not fatal, as in the backend image; pipefail would otherwise turn it into one.
 python manage.py build_similarity_index 2>&1 | tee "$logs_dir/command_build_similarity_index.log" \
