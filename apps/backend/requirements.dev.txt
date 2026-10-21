@@ -12,7 +12,7 @@ pre-commit==4.7.0; python_version >= "3.11"
 pre-commit==4.6.2; python_version < "3.11"
 coverage==7.16.2
 Faker==40.43.0
-setuptools==84.0.0
+setuptools==84.2.1
 pyfakefs==6.2.0
 ruff==0.15.22
 # Dead-code check (scripts/check_dead_code.py); lint-backend.yml installs this pin.
